@@ -63,11 +63,11 @@ if (Test-Path $ZipPath) {
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $tempZip = "$ZipPath.tmp"
-[System.IO.Compression.ZipFile]::CreateFromDirectory($ReleaseDir, $tempZip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+[System.IO.Compression.ZipFile]::CreateFromDirectory($ReleaseDir, $tempZip, [System.IO.Compression.CompressionLevel]::Optimal, $true)
 
 # Rewrite the zip without .pch files
 $zipIn  = [System.IO.Compression.ZipFile]::Open($tempZip, 'Update')
-$toRemove = $zipIn.Entries | Where-Object { $_.FullName -like "*.pch" -or $_.FullName -like "*.zip" }
+$toRemove = @($zipIn.Entries | Where-Object { $_.FullName -like "*.pch" -or $_.FullName -like "*.zip" })
 foreach ($entry in $toRemove) { $entry.Delete() }
 $zipIn.Dispose()
 
