@@ -14,6 +14,13 @@ This project is based on source code of Minecraft Legacy Console Edition v1.6.05
 
 ## Latest:
 
+Multi-language font rendering and Unicode text input!
+- Type and read text/characters in Japanese, Chinese, Korean, Thai, Arabic, Hindi, and many more languages
+- Works in: chat, signs, world names, seeds, server address/port fields
+- Two rendering systems: Iggy UI uses a new unicode bitmap fallback font; legacy C++ renderer uses Java Minecraft's glyph page system
+- Security: blocked Unicode bidirectional override characters to prevent chat spoofing
+- Fixed a pre-existing memory leak in sign loading
+
 Added copy+paste support for IP/Port, world names, world seeds, server names, signs, etc.
 - Just use control+v to paste from your clipboard!
 
