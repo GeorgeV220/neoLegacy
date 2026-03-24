@@ -546,6 +546,61 @@ int CPlatformNetworkManagerStub::JoinGame(FriendSessionInfo* searchResult, int l
 #endif
 }
 
+#ifdef _WINDOWS64
+bool CPlatformNetworkManagerStub::BeginJoinGameAsync(FriendSessionInfo* searchResult, int localUsersMask, int primaryUserIndex)
+{
+	if (searchResult == nullptr)
+		return false;
+
+	const char* hostIP = searchResult->data.hostIP;
+	int hostPort = searchResult->data.hostPort;
+
+	if (hostPort <= 0 || hostIP[0] == 0)
+		return false;
+
+	m_bLeavingGame = false;
+	m_bLeaveGameOnTick = false;
+	IQNet::s_isHosting = false;
+	m_pIQNet->ClientJoinGame();
+
+	IQNet::m_player[0].m_smallId = 0;
+	IQNet::m_player[0].m_isRemote = true;
+	IQNet::m_player[0].m_isHostPlayer = true;
+	IQNet::m_player[0].m_resolvedXuid = Win64Xuid::GetLegacyEmbeddedHostXuid();
+	wcsncpy_s(IQNet::m_player[0].m_gamertag, 32, searchResult->data.hostName, _TRUNCATE);
+
+	WinsockNetLayer::StopDiscovery();
+
+	return WinsockNetLayer::StartJoinGameAsync(hostIP, hostPort);
+}
+
+int CPlatformNetworkManagerStub::FinishJoinGame(FriendSessionInfo* searchResult)
+{
+	BYTE localSmallId = WinsockNetLayer::GetLocalSmallId();
+
+	IQNet::m_player[localSmallId].m_smallId = localSmallId;
+	IQNet::m_player[localSmallId].m_isRemote = false;
+	IQNet::m_player[localSmallId].m_isHostPlayer = false;
+	IQNet::m_player[localSmallId].m_resolvedXuid = Win64Xuid::ResolvePersistentXuid();
+
+	Minecraft* pMinecraft = Minecraft::GetInstance();
+	wcscpy_s(IQNet::m_player[localSmallId].m_gamertag, 32, pMinecraft->user->name.c_str());
+	IQNet::s_playerCount = localSmallId + 1;
+
+	NotifyPlayerJoined(&IQNet::m_player[0]);
+	NotifyPlayerJoined(&IQNet::m_player[localSmallId]);
+
+	m_pGameNetworkManager->StateChange_AnyToStarting();
+
+	return CGameNetworkManager::JOINGAME_SUCCESS;
+}
+
+void CPlatformNetworkManagerStub::CancelJoinGame()
+{
+	WinsockNetLayer::CancelJoinGame();
+}
+#endif
+
 bool CPlatformNetworkManagerStub::SetLocalGame(bool isLocal)
 {
 	m_bIsOfflineGame = isLocal;
@@ -955,6 +1010,13 @@ void CPlatformNetworkManagerStub::ForceFriendsSessionRefresh()
 		delete m_pSearchResults[i];
 		m_pSearchResults[i] = nullptr;
 	}
+
+#ifdef _WINDOWS64
+	// Immediately rebuild the session list from servers.db so that
+	// edits/deletions are visible as soon as the UI regains focus,
+	// rather than waiting for the next TickSearch() cycle.
+	SearchForGames();
+#endif
 }
 
 INetworkPlayer *CPlatformNetworkManagerStub::addNetworkPlayer(IQNetPlayer *pQNetPlayer)

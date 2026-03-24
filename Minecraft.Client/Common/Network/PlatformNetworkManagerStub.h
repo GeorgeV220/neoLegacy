@@ -42,6 +42,11 @@ public:
 
 	virtual void HostGame(int localUsersMask, bool bOnlineGame, bool bIsPrivate, unsigned char publicSlots = MINECRAFT_NET_MAX_PLAYERS, unsigned char privateSlots = 0);
 	virtual int  JoinGame(FriendSessionInfo *searchResult, int localUsersMask, int primaryUserIndex );
+#ifdef _WINDOWS64
+	bool BeginJoinGameAsync(FriendSessionInfo *searchResult, int localUsersMask, int primaryUserIndex);
+	int  FinishJoinGame(FriendSessionInfo *searchResult);
+	void CancelJoinGame();
+#endif
 	virtual bool SetLocalGame(bool isLocal);
 	virtual bool IsLocalGame() { return m_bIsOfflineGame; }
 	virtual void SetPrivateGame(bool isPrivate);

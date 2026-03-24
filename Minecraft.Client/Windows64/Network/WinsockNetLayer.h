@@ -69,6 +69,12 @@ public:
 	static bool HostGame(int port, const char* bindIp = nullptr);
 	static bool JoinGame(const char* ip, int port);
 
+	// Async join: runs JoinGame on a background thread so the UI stays responsive
+	static bool StartJoinGameAsync(const char* ip, int port);
+	static bool IsJoinComplete();
+	static bool GetJoinResult();
+	static void CancelJoinGame();
+
 	static bool SendToSmallId(BYTE targetSmallId, const void* data, int dataSize);
 	static bool SendOnSocket(SOCKET sock, const void* data, int dataSize);
 
@@ -112,6 +118,7 @@ private:
 	static DWORD WINAPI SplitScreenRecvThreadProc(LPVOID param);
 	static DWORD WINAPI AdvertiseThreadProc(LPVOID param);
 	static DWORD WINAPI DiscoveryThreadProc(LPVOID param);
+	static DWORD WINAPI JoinGameThreadProc(LPVOID param);
 
 	static SOCKET s_listenSocket;
 	static SOCKET s_hostConnectionSocket;
@@ -153,6 +160,14 @@ private:
 	// O(1) smallId -> socket lookup so we don't scan s_connections (which never shrinks) on every send
 	static SOCKET s_smallIdToSocket[256];
 	static CRITICAL_SECTION s_smallIdToSocketLock;
+
+	// Async join state
+	static volatile bool s_joinCancelled;
+	static volatile bool s_joinComplete;
+	static bool s_joinResult;
+	static HANDLE s_joinGameThread;
+	static char s_joinIP[256];
+	static int s_joinPort;
 
 	// Per-pad split-screen TCP connections (client-side, non-host only)
 	static SOCKET s_splitScreenSocket[XUSER_MAX_COUNT];

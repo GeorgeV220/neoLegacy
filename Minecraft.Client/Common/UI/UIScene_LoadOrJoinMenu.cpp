@@ -637,6 +637,11 @@ void UIScene_LoadOrJoinMenu::handleGainFocus(bool navBack)
 
         if( m_bMultiplayerAllowed )
         {
+#ifdef _WINDOWS64
+            // Refresh the games list immediately so that any server
+            // edits/deletions made in the JoinMenu are visible now.
+            UpdateGamesList();
+#endif
 #if TO_BE_IMPLEMENTED
             HXUICLASS hClassFullscreenProgress = XuiFindClass( L"CScene_FullscreenProgress" );
             HXUICLASS hClassConnectingProgress = XuiFindClass( L"CScene_ConnectingProgress" );

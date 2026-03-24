@@ -67,6 +67,13 @@ SOCKET WinsockNetLayer::s_splitScreenSocket[XUSER_MAX_COUNT] = { INVALID_SOCKET,
 BYTE WinsockNetLayer::s_splitScreenSmallId[XUSER_MAX_COUNT] = { 0xFF, 0xFF, 0xFF, 0xFF };
 HANDLE WinsockNetLayer::s_splitScreenRecvThread[XUSER_MAX_COUNT] = {nullptr, nullptr, nullptr, nullptr};
 
+volatile bool WinsockNetLayer::s_joinCancelled = false;
+volatile bool WinsockNetLayer::s_joinComplete = false;
+bool WinsockNetLayer::s_joinResult = false;
+HANDLE WinsockNetLayer::s_joinGameThread = nullptr;
+char WinsockNetLayer::s_joinIP[256] = {};
+int WinsockNetLayer::s_joinPort = 0;
+
 bool g_Win64MultiplayerHost = false;
 bool g_Win64MultiplayerJoin = false;
 int g_Win64MultiplayerPort = WIN64_NET_DEFAULT_PORT;
@@ -337,10 +344,17 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 
 	bool connected = false;
 	BYTE assignedSmallId = 0;
-	const int maxAttempts = 12;
+	const int maxAttempts = 3;
+	const int connectTimeoutSec = 5;
 
 	for (int attempt = 0; attempt < maxAttempts; ++attempt)
 	{
+		if (s_joinCancelled)
+		{
+			app.DebugPrintf("JoinGame cancelled by user\n");
+			break;
+		}
+
 		s_hostConnectionSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 		if (s_hostConnectionSocket == INVALID_SOCKET)
 		{
@@ -351,16 +365,54 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 		int noDelay = 1;
 		setsockopt(s_hostConnectionSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
 
+		// Use non-blocking connect with select() timeout so we don't freeze
+		// the game for the full OS TCP timeout when the server is unreachable.
+		u_long nonBlocking = 1;
+		ioctlsocket(s_hostConnectionSocket, FIONBIO, &nonBlocking);
+
 		iResult = connect(s_hostConnectionSocket, result->ai_addr, static_cast<int>(result->ai_addrlen));
 		if (iResult == SOCKET_ERROR)
 		{
 			int err = WSAGetLastError();
-			app.DebugPrintf("connect() to %s:%d failed (attempt %d/%d): %d\n", ip, port, attempt + 1, maxAttempts, err);
-			closesocket(s_hostConnectionSocket);
-			s_hostConnectionSocket = INVALID_SOCKET;
-			Sleep(200);
-			continue;
+			if (err == WSAEWOULDBLOCK)
+			{
+				fd_set writeSet, errorSet;
+				FD_ZERO(&writeSet);
+				FD_SET(s_hostConnectionSocket, &writeSet);
+				FD_ZERO(&errorSet);
+				FD_SET(s_hostConnectionSocket, &errorSet);
+
+				struct timeval tv;
+				tv.tv_sec = connectTimeoutSec;
+				tv.tv_usec = 0;
+
+				int selectResult = select(0, nullptr, &writeSet, &errorSet, &tv);
+				if (selectResult <= 0 || FD_ISSET(s_hostConnectionSocket, &errorSet))
+				{
+					app.DebugPrintf("connect() to %s:%d timed out or failed (attempt %d/%d)\n", ip, port, attempt + 1, maxAttempts);
+					closesocket(s_hostConnectionSocket);
+					s_hostConnectionSocket = INVALID_SOCKET;
+					continue;
+				}
+				// Connection succeeded via non-blocking path
+			}
+			else
+			{
+				app.DebugPrintf("connect() to %s:%d failed (attempt %d/%d): %d\n", ip, port, attempt + 1, maxAttempts, err);
+				closesocket(s_hostConnectionSocket);
+				s_hostConnectionSocket = INVALID_SOCKET;
+				Sleep(200);
+				continue;
+			}
 		}
+
+		// Restore blocking mode for normal socket I/O
+		u_long blocking = 0;
+		ioctlsocket(s_hostConnectionSocket, FIONBIO, &blocking);
+
+		// Set a recv timeout so we don't block forever waiting for the small ID
+		DWORD recvTimeout = connectTimeoutSec * 1000;
+		setsockopt(s_hostConnectionSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&recvTimeout, sizeof(recvTimeout));
 
 		BYTE assignBuf[1];
 		int bytesRecv = recv(s_hostConnectionSocket, (char*)assignBuf, 1, 0);
@@ -369,7 +421,6 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 			app.DebugPrintf("Failed to receive small ID assignment from host (attempt %d/%d)\n", attempt + 1, maxAttempts);
 			closesocket(s_hostConnectionSocket);
 			s_hostConnectionSocket = INVALID_SOCKET;
-			Sleep(200);
 			continue;
 		}
 
@@ -419,6 +470,56 @@ bool WinsockNetLayer::JoinGame(const char* ip, int port)
 	s_clientRecvThread = CreateThread(nullptr, 0, ClientRecvThreadProc, nullptr, 0, nullptr);
 
 	return true;
+}
+
+DWORD WINAPI WinsockNetLayer::JoinGameThreadProc(LPVOID param)
+{
+	s_joinResult = JoinGame(s_joinIP, s_joinPort);
+	s_joinComplete = true;
+	return 0;
+}
+
+bool WinsockNetLayer::StartJoinGameAsync(const char* ip, int port)
+{
+	// Wait for any previous join thread to finish
+	if (s_joinGameThread != nullptr)
+	{
+		WaitForSingleObject(s_joinGameThread, 5000);
+		CloseHandle(s_joinGameThread);
+		s_joinGameThread = nullptr;
+	}
+
+	strncpy_s(s_joinIP, sizeof(s_joinIP), ip, _TRUNCATE);
+	s_joinPort = port;
+	s_joinCancelled = false;
+	s_joinComplete = false;
+	s_joinResult = false;
+
+	s_joinGameThread = CreateThread(nullptr, 0, JoinGameThreadProc, nullptr, 0, nullptr);
+	return s_joinGameThread != nullptr;
+}
+
+bool WinsockNetLayer::IsJoinComplete()
+{
+	return s_joinComplete;
+}
+
+bool WinsockNetLayer::GetJoinResult()
+{
+	return s_joinResult;
+}
+
+void WinsockNetLayer::CancelJoinGame()
+{
+	s_joinCancelled = true;
+
+	// Close the socket to immediately unblock any in-progress connect/select/recv
+	SOCKET sock = s_hostConnectionSocket;
+	if (sock != INVALID_SOCKET)
+	{
+		s_hostConnectionSocket = INVALID_SOCKET;
+		closesocket(sock);
+	}
 }
 
 bool WinsockNetLayer::SendOnSocket(SOCKET sock, const void* data, int dataSize)

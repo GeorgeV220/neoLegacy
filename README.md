@@ -14,6 +14,13 @@ This project is based on source code of Minecraft Legacy Console Edition v1.6.05
 
 ## Latest:
 
+Server list and connection improvements:
+- Server edits and deletions now apply immediately without needing to restart the game
+- Connecting to an offline/unreachable server no longer freezes the game indefinitely
+- Connection attempts use non-blocking sockets with a 5-second timeout (3 retries max) instead of the OS TCP timeout
+- Connection runs on a background thread so the UI stays responsive, with a cancel option (press B or Escape) to back out at any time
+- Failed connections now always show a "Connection Failed" dialog instead of silently navigating back
+
 Upstream merge:
 - Fixed font rendering for color and formatting codes, splash text like "Colormatic!" now renders with proper per-character colors
 - Fixed Sign editing UI, SignEntryMenu720 restored to correct version

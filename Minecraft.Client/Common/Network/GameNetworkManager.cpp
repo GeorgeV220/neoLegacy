@@ -772,7 +772,31 @@ void CGameNetworkManager::CancelJoinGame(LPVOID lpParam)
 #ifdef _XBOX_ONE
 	s_pPlatformNetworkManager->CancelJoinGame();
 #endif
+#ifdef _WINDOWS64
+	static_cast<CPlatformNetworkManagerStub*>(s_pPlatformNetworkManager)->CancelJoinGame();
+#endif
 }
+
+#ifdef _WINDOWS64
+bool CGameNetworkManager::BeginJoinGameAsync(FriendSessionInfo *searchResult, int localUsersMask)
+{
+	app.SetTutorialMode(false);
+	g_NetworkManager.SetLocalGame(false);
+
+	int primaryUserIndex = ProfileManager.GetLockedProfile();
+
+	Minecraft::GetInstance()->clearConnectionFailed();
+
+	localUsersMask |= GetLocalPlayerMask(ProfileManager.GetPrimaryPad());
+
+	return static_cast<CPlatformNetworkManagerStub*>(s_pPlatformNetworkManager)->BeginJoinGameAsync(searchResult, localUsersMask, primaryUserIndex);
+}
+
+int CGameNetworkManager::FinishJoinGame(FriendSessionInfo *searchResult)
+{
+	return static_cast<CPlatformNetworkManagerStub*>(s_pPlatformNetworkManager)->FinishJoinGame(searchResult);
+}
+#endif
 
 bool CGameNetworkManager::LeaveGame(bool bMigrateHost)
 {

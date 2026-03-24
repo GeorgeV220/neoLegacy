@@ -7,6 +7,9 @@
 #include "..\..\MinecraftServer.h"
 #include "..\..\..\Minecraft.World\net.minecraft.world.level.h"
 #include "..\..\..\Minecraft.World\net.minecraft.world.h"
+#ifdef _WINDOWS64
+#include "..\..\Windows64\Network\WinsockNetLayer.h"
+#endif
 
 #define UPDATE_PLAYERS_TIMER_ID 0
 #define UPDATE_PLAYERS_TIMER_TIME 30000
@@ -26,6 +29,8 @@ UIScene_JoinMenu::UIScene_JoinMenu(int iPad, void *_initData, UILayer *parentLay
 	m_editServerPhase = eEditServer_Idle;
 	m_editServerButtonIndex = -1;
 	m_deleteServerButtonIndex = -1;
+	m_asyncJoinInProgress = false;
+	m_joinLocalUsersMask = 0;
 #endif
 }
 
@@ -59,6 +64,35 @@ void UIScene_JoinMenu::updateTooltips()
 
 void UIScene_JoinMenu::tick()
 {
+#ifdef _WINDOWS64
+	if (m_asyncJoinInProgress && WinsockNetLayer::IsJoinComplete())
+	{
+		m_asyncJoinInProgress = false;
+		if (WinsockNetLayer::GetJoinResult())
+		{
+			int result = g_NetworkManager.FinishJoinGame(m_selectedSession);
+			app.SetLiveLinkRequired(false);
+			if (result != CGameNetworkManager::JOINGAME_SUCCESS)
+			{
+				m_bIgnoreInput = false;
+				m_buttonJoinGame.setLabel(app.GetString(IDS_JOIN_GAME));
+				updateTooltips();
+			}
+		}
+		else
+		{
+			app.SetLiveLinkRequired(false);
+			m_bIgnoreInput = false;
+			m_buttonJoinGame.setLabel(app.GetString(IDS_JOIN_GAME));
+			updateTooltips();
+
+			UINT uiIDA[1];
+			uiIDA[0] = IDS_CONFIRM_OK;
+			ui.RequestErrorMessage(IDS_CONNECTION_FAILED, IDS_CONNECTION_LOST_SERVER, uiIDA, 1, ProfileManager.GetPrimaryPad());
+		}
+	}
+#endif
+
 	if( !m_friendInfoRequestIssued )
 	{
 		ui.NavigateToScene(m_iPad, eUIScene_Timer);
@@ -282,6 +316,19 @@ wstring UIScene_JoinMenu::getMoviePath()
 
 void UIScene_JoinMenu::handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool &handled)
 {
+#ifdef _WINDOWS64
+	if (m_asyncJoinInProgress && key == ACTION_MENU_CANCEL && pressed)
+	{
+		g_NetworkManager.CancelJoinGame(nullptr);
+		m_asyncJoinInProgress = false;
+		m_bIgnoreInput = false;
+		m_buttonJoinGame.setLabel(app.GetString(IDS_JOIN_GAME));
+		updateTooltips();
+		handled = true;
+		return;
+	}
+#endif
+
 	if(m_bIgnoreInput) return;
 
 	ui.AnimateKeyPress(m_iPad, key, repeat, pressed, released);
@@ -578,7 +625,19 @@ void UIScene_JoinMenu::JoinGame(UIScene_JoinMenu* pClass)
 			ProfileManager.DisplaySystemMessage( SCE_MSG_DIALOG_SYSMSG_TYPE_TRC_PSN_CHAT_RESTRICTION, ProfileManager.GetPrimaryPad() );
 		}
 #endif
+#ifdef _WINDOWS64
+		if (g_NetworkManager.BeginJoinGameAsync(pClass->m_selectedSession, dwLocalUsersMask))
+		{
+			pClass->m_asyncJoinInProgress = true;
+			pClass->m_joinLocalUsersMask = dwLocalUsersMask;
+			pClass->m_buttonJoinGame.setLabel(app.GetString(IDS_PROGRESS_CONNECTING));
+			ui.SetTooltips(DEFAULT_XUI_MENU_USER, -1, IDS_TOOLTIPS_CANCEL_JOIN);
+			return;
+		}
+		CGameNetworkManager::eJoinGameResult result = CGameNetworkManager::JOINGAME_FAIL_GENERAL;
+#else
 		CGameNetworkManager::eJoinGameResult result = g_NetworkManager.JoinGame( pClass->m_selectedSession, dwLocalUsersMask );
+#endif
 
 		// Alert the app the we no longer want to be informed of ethernet connections
 		app.SetLiveLinkRequired( false );
@@ -637,16 +696,18 @@ void UIScene_JoinMenu::JoinGame(UIScene_JoinMenu* pClass)
 
 			if( exitReasonStringId == -1 )
 			{
-				ui.NavigateBack(pClass->m_iPad);
+				// No specific disconnect reason was set — the server was likely
+				// unreachable.  Show a "Connection Failed" dialog instead of
+				// silently navigating back so the user knows what happened.
+				exitReasonStringId = IDS_CONNECTION_LOST_SERVER;
 			}
-			else
+
 			{
 				UINT uiIDA[1];
 				uiIDA[0]=IDS_CONFIRM_OK;
 				ui.RequestErrorMessage( IDS_CONNECTION_FAILED, exitReasonStringId, uiIDA,1,ProfileManager.GetPrimaryPad());
-				exitReasonStringId = -1;
 
-				ui.NavigateToHomeMenu();
+				pClass->m_bIgnoreInput = false;
 			}
 		}
 	}

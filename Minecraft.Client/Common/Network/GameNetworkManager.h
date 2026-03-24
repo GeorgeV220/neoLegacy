@@ -106,6 +106,10 @@ public:
 	bool			JoinGameFromInviteInfo( int userIndex, int userMask, const INVITE_INFO *pInviteInfo);
 	eJoinGameResult	JoinGame(FriendSessionInfo *searchResult, int localUsersMask);
 	static void		CancelJoinGame(LPVOID lpParam); // Not part of the shared interface
+#ifdef _WINDOWS64
+	bool			BeginJoinGameAsync(FriendSessionInfo *searchResult, int localUsersMask);
+	int				FinishJoinGame(FriendSessionInfo *searchResult);
+#endif
 	bool			LeaveGame(bool bMigrateHost);
 	static int		JoinFromInvite_SignInReturned(void *pParam,bool bContinue, int iPad);
 	void			UpdateAndSetGameSessionData(INetworkPlayer *pNetworkPlayerLeaving = nullptr);

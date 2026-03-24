@@ -70,6 +70,8 @@ private:
 	wstring m_editServerPort;
 	int m_editServerButtonIndex;
 	int m_deleteServerButtonIndex;
+	bool m_asyncJoinInProgress;
+	DWORD m_joinLocalUsersMask;
 #endif
 
 public:
