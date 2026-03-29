@@ -1,61 +1,244 @@
-name: Nightly Releases
+name: Nightly Release
 
 on:
   workflow_dispatch:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Windows64
+  build-client:
+    name: Build Client
     runs-on: windows-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v6
 
-    - name: Setup msbuild
-      uses: microsoft/setup-msbuild@v2
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Build
-      run: MSBuild.exe MinecraftConsoles.sln /p:Configuration=Release /p:Platform="Windows64"
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Run CMake
+      uses: lukka/run-cmake@v10
+      env:
+        VCPKG_ROOT: ""
+      with:
+        configurePreset: windows64
+        buildPreset: windows64-release
+        buildPresetAdditionalArgs: "['--target', 'Minecraft.Client']"
 
     - name: Zip Build
-      run: 7z a -r LCEWindows64.zip ./x64/Release/*
+      shell: pwsh
+      run: |
+        $source = "./build/windows64/Minecraft.Client/Release"
+        $zip = "LCREWindows64.zip"
+        $topLevel = "LCREWindows64"
 
-    - name: Zip Dedicated Server Build
-      run: 7z a -r LCEServerWindows64.zip ./x64/Minecraft.Server/Release/*
+        # Collect files, excluding unwanted extensions
+        $files = Get-ChildItem -Path $source -Recurse -File |
+          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj' }
 
-    - name: Update Client release
-      uses: andelf/nightly-release@main
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        Add-Type -AssemblyName System.IO.Compression
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+        $basePath = (Resolve-Path $source).Path
+        $fs = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create)
+        try {
+          $archive = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
+          try {
+            # Add directories
+            Get-ChildItem -Path $basePath -Recurse -Directory | ForEach-Object {
+              $rel = $_.FullName.Substring($basePath.Length).TrimStart('\', '/')
+              $archive.CreateEntry("$topLevel/$($rel -replace '\\','/')/") | Out-Null
+            }
+            # Add files
+            foreach ($file in $files) {
+              $rel = $file.FullName.Substring($basePath.Length).TrimStart('\', '/')
+              $entryName = "$topLevel/$($rel -replace '\\','/')"
+              [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $archive, $file.FullName, $entryName,
+                [System.IO.Compression.CompressionLevel]::Optimal
+              ) | Out-Null
+            }
+          } finally { $archive.Dispose() }
+        } finally { $fs.Dispose() }
+
+        Write-Host "Created $zip"
+
+    - name: Stage artifacts
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path staging
+        Copy-Item LCREWindows64.zip staging/
+        Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.exe staging/
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v6
       with:
-        tag_name: nightly
-        name: Nightly Client Release
-        body: |
-          Requires at least Windows 7 and DirectX 11 compatible GPU to run. Compiled with MSVC v14.44.35207 in Release mode with Whole Program Optimization, as well as `/O2 /Ot /Oi /Ob3 /GF /fp:precise`.
-          
-          # 🚨 First time here? 🚨
-          If you've never downloaded the game before, you need to download `LCEWindows64.zip` and extract it to the folder where you'd like to keep the game. The other files are included in this `.zip` file!
-        files: |
-            LCEWindows64.zip
-            ./x64/Release/Minecraft.Client.exe
-            ./x64/Release/Minecraft.Client.pdb
+        name: client-build
+        path: staging/*
 
-    - name: Update Dedicated Server release
+  build-server:
+    name: Build Server
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
+
+    - name: Run CMake
+      uses: lukka/run-cmake@v10
+      env:
+        VCPKG_ROOT: ""
+      with:
+        configurePreset: windows64
+        buildPreset: windows64-release
+        buildPresetAdditionalArgs: "['--target', 'Minecraft.Server']"
+
+    - name: Zip Build
+      shell: pwsh
+      run: |
+        $source = "./build/windows64/Minecraft.Server/Release"
+        $zip = "LCREServerWindows64.zip"
+        $topLevel = "LCREServerWindows64"
+
+        $files = Get-ChildItem -Path $source -Recurse -File |
+          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj' }
+
+        Add-Type -AssemblyName System.IO.Compression
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+        $basePath = (Resolve-Path $source).Path
+        $fs = [System.IO.File]::Open($zip, [System.IO.FileMode]::Create)
+        try {
+          $archive = New-Object System.IO.Compression.ZipArchive($fs, [System.IO.Compression.ZipArchiveMode]::Create)
+          try {
+            Get-ChildItem -Path $basePath -Recurse -Directory | ForEach-Object {
+              $rel = $_.FullName.Substring($basePath.Length).TrimStart('\', '/')
+              $archive.CreateEntry("$topLevel/$($rel -replace '\\','/')/") | Out-Null
+            }
+            foreach ($file in $files) {
+              $rel = $file.FullName.Substring($basePath.Length).TrimStart('\', '/')
+              $entryName = "$topLevel/$($rel -replace '\\','/')"
+              [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $archive, $file.FullName, $entryName,
+                [System.IO.Compression.CompressionLevel]::Optimal
+              ) | Out-Null
+            }
+          } finally { $archive.Dispose() }
+        } finally { $fs.Dispose() }
+
+        Write-Host "Created $zip"
+
+    - name: Stage artifacts
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path staging
+        Copy-Item LCREServerWindows64.zip staging/
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v6
+      with:
+        name: server-build
+        path: staging/*
+
+  release-server:
+    name: Release Server
+    needs: build-server
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download server artifacts
+      uses: actions/download-artifact@v7
+      with:
+        name: server-build
+        path: artifacts
+
+    - name: Attest artifacts
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-path: |
+          artifacts/LCREServerWindows64.zip
+
+    - name: Get short SHA
+      id: sha
+      run: echo "short=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+    - name: Update release
       uses: andelf/nightly-release@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: nightly-dedicated-server
-        name: Nightly Dedicated Server Release
+        name: "Server: ${{ steps.sha.outputs.short }}"
         body: |
           Dedicated Server runtime for Windows64.
 
-          Download `LCEServerWindows64.zip` and extract it to a folder where you'd like to keep the server runtime.
+          Download `LCREServerWindows64.zip` and extract it to a folder where you'd like to keep the server runtime.
         files: |
-            LCEServerWindows64.zip
-            ./x64/Minecraft.Server/Release/Minecraft.Server.exe
-            ./x64/Minecraft.Server/Release/Minecraft.Server.pdb
+          artifacts/*
+
+  release-client:
+    name: Release Client
+    needs: [build-client, release-server]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download client artifacts
+      uses: actions/download-artifact@v7
+      with:
+        name: client-build
+        path: artifacts
+
+    - name: Attest artifacts
+      uses: actions/attest-build-provenance@v2
+      with:
+        subject-path: |
+          artifacts/LCREWindows64.zip
+          artifacts/Minecraft.Client.exe
+
+    - name: Get short SHA
+      id: sha
+      run: echo "short=$(echo '${{ github.sha }}' | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+    - name: Update release
+      uses: andelf/nightly-release@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: nightly
+        name: "Client: ${{ steps.sha.outputs.short }}"
+        body: |
+          Requires at least Windows 7 and DirectX 11 compatible GPU to run.
+
+          # First time here?
+          If you've never downloaded the game before, you need to download `LCREWindows64.zip` and extract it to the folder where you'd like to keep the game. The other files are included in this `.zip` file!
+        files: |
+          artifacts/*
+
+  cleanup:
+    needs: [release-client, release-server]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Cleanup artifacts
+      uses: geekyeggo/delete-artifact@v5
+      with:
+        name: |
+          client-build
+          server-build
