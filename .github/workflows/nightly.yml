@@ -202,8 +202,8 @@ jobs:
 
     - name: Create signed tag
       run: |
-        git tag -s -f Nightly -m "Nightly release ${{ steps.sha.outputs.short }}"
-        git push origin Nightly --force
+        git tag -s -f Nightly-Dedicated-Server -m "Nightly server release ${{ steps.sha.outputs.short }}"
+        git push origin Nightly-Dedicated-Server --force
 
     - name: Create release
       env:
