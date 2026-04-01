@@ -420,3 +420,4 @@ server-data/
 tools/*.class
 tools/*.swf
 tools/staging/
+tools/server-monitor/
