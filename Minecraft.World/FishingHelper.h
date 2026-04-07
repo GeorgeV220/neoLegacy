@@ -1,10 +1,11 @@
 #pragma once
-
+using namespace std;
 #include "../Minecraft.World/WeighedTreasure.h"
 #include "../Minecraft.World/ItemInstance.h"
 #include "net.minecraft.world.item.h"
 #include <unordered_map>
 #include <memory>
+
 
 enum CatchType {
   FISH,
@@ -15,7 +16,6 @@ enum CatchType {
 class CatchTypeWeighedItem : public WeighedRandomItem {
 	protected:
 		CatchType type;
-		int quality;
 		int weight;
 
 	public:
@@ -31,6 +31,8 @@ class CatchTypeWeighedItem : public WeighedRandomItem {
 		}
 
 		void modWeight(int mod) {
+			// Modweight doesn't need clamping, this is done in FishingHook.cpp.
+			// randomWeight can be changed, weight stays the same. randomWeight is set equal to weight upon initialization.
 			this->randomWeight = this->weight + mod;
 		}
 
@@ -74,7 +76,6 @@ class FishingHelper
 		WeighedRandomItemArray fishingJunkArray;
 		WeighedRandomItemArray fishingTreasuresArray;
 
-		CatchType getRandCatchType(int level, Random* random);
 		CatchWeighedItem* getRandCatch(CatchType catchType, Random* random);
 		std::shared_ptr<ItemInstance> handleCatch(CatchWeighedItem* weighedCatch, CatchType catchType, Random* random);
 		CatchType getRandCatchType(int fishMod, int junkMod, int treasureMod, Random* random);

@@ -28,6 +28,9 @@ private:
 	int nibble;
 	int nibbleTimer;
 	int lureTime;
+
+	int lureLevel;
+	int luckLevel;
 	shared_ptr<ItemInstance> previousItem;
 
 public:
@@ -60,6 +63,7 @@ public:
 	virtual void addAdditonalSaveData(CompoundTag *tag);
 	virtual void readAdditionalSaveData(CompoundTag *tag);
 	virtual float getShadowHeightOffs();
+	virtual void getEnchantLevels();
 	int retrieve();
 
 	// 4J Stu - Brought forward from 1.4

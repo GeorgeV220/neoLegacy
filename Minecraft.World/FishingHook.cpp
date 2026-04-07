@@ -15,6 +15,7 @@
 #include "../Minecraft.World/EnchantmentHelper.h"
 #include "../Minecraft.World/Enchantment.h"
 #include "../Minecraft.World/ItemInstance.h"
+#include <algorithm>
 
 // 4J - added common ctor code.
 void FishingHook::_init()
@@ -37,6 +38,9 @@ void FishingHook::_init()
 	lureTime = 0;
 	hookedIn = nullptr;
 	previousItem = nullptr;
+
+	lureLevel = 0;
+	luckLevel = 0;
 
 	lSteps = 0;
 	lx = 0.0;
@@ -67,6 +71,8 @@ FishingHook::FishingHook(Level *level, double x, double y, double z,  std::share
 	// 4J Stu - Moved this outside the ctor
 	//owner->fishing = dynamic_pointer_cast<FishingHook>( shared_from_this() );
 
+	getEnchantLevels();
+
 	setPos(x, y, z);
 }
 
@@ -77,6 +83,7 @@ FishingHook::FishingHook(Level *level,  std::shared_ptr<Player> mob) : Entity( l
 	owner = mob;
 	// 4J Stu - Moved this outside the ctor
 	//owner->fishing = dynamic_pointer_cast<FishingHook>( shared_from_this() );
+	getEnchantLevels();
 
 	moveTo(mob->x, mob->y + 1.62 - mob->heightOffset, mob->z, mob->yRot, mob->xRot);
 
@@ -94,6 +101,14 @@ FishingHook::FishingHook(Level *level,  std::shared_ptr<Player> mob) : Entity( l
 	yd = (-Mth::sin(xRot / 180 * PI)) * speed;
 
 	shoot(xd, yd, zd, 1.5f, 1);
+}
+
+void FishingHook::getEnchantLevels() {
+	if (this->owner == nullptr) return;
+	std::shared_ptr<ItemInstance> fishingRod = owner->getSelectedItem();
+	// TODO; Account for luck effect once implemented.
+	this->luckLevel = EnchantmentHelper::getEnchantmentLevel(65, fishingRod); // Luck of the sea
+	this->lureLevel = EnchantmentHelper::getEnchantmentLevel(64, fishingRod); // Lure
 }
 
 void FishingHook::defineSynchedData()
@@ -349,7 +364,7 @@ void FishingHook::tick()
 			}
 
 			else if (!(level->canSeeSky(Mth::floor(x), Mth::floor(y) + 1, Mth::floor(z)))) {
-				// Don't minus the nibbleTimer if the hook is under a roof
+				// Don't minus the nibbleTimer if the hook obstructed from the sky.
 			}
 
 			else {
@@ -364,9 +379,7 @@ void FishingHook::tick()
 			// Only calculate the effect of lure if it hasn't been calculated already.
 			if (lureTime == 0 && owner != nullptr)
 			{
-				std::shared_ptr<ItemInstance> selectedItemLureCheck = owner->getSelectedItem();
-				int level = EnchantmentHelper::getEnchantmentLevel(64, selectedItemLureCheck); // Lure
-				lureTime = level * 100;
+				lureTime = this->lureLevel * 100;
 				nibbleTimer -= lureTime;
 				// if the lure effect causes the nibble timer to go below 0, reset the timer and lure time to recalculate next tick. Source: https://minecraft.wiki/w/Fishing
 				if (nibbleTimer < 0)
@@ -470,14 +483,9 @@ int FishingHook::retrieve()
 	{
 		FishingHelper* helper = FishingHelper::getInstance();
 
-		std::shared_ptr<ItemInstance> selectedItemSeaLuck = owner->getSelectedItem();
-		// TODO: Take into account luck potion effect when calculating luck level once it's implemented
-		int luckSeaLevel = EnchantmentHelper::getEnchantmentLevel(65, selectedItemSeaLuck); // Luck of the sea
-		int lureSeaLevel = EnchantmentHelper::getEnchantmentLevel(64, selectedItemSeaLuck); // Lure
-
-		int junkMod = (-10 * lureSeaLevel) + (-25 * luckSeaLevel); // Lure reduces by 1% per level, luck of the sea 2.5% per level.
-		int treasureMod = (- 10 * lureSeaLevel) + (10 * luckSeaLevel);
-		int fishMod = (-junkMod + -treasureMod, 100); // Fish chance is affected my junkMod and treasureMod
+		int junkMod = clamp((-10 * this->lureLevel) + (-25 * this->luckLevel), 0, 1000); // Lure reduces by 1% per level, luck of the sea 2.5% per level.
+		int treasureMod = clamp((-10 * this->lureLevel) + (10 * this->luckLevel), 0, 1000); // Lure reduces by 1% per level, luck of the sea increases by 1% per level.
+		int fishMod = -junkMod + -treasureMod; // Fish chance is affected by junkMod and treasureMod
 		std::shared_ptr<ItemInstance> fishingItemInstance = helper->getCatch(fishMod, junkMod, treasureMod, random);
 		
 		std::shared_ptr<ItemEntity> ie = std::make_shared<ItemEntity>(this->Entity::level, x, y, z, fishingItemInstance);

@@ -17,16 +17,16 @@ FishingHelper* FishingHelper::getInstance()
 FishingHelper::FishingHelper() : catchTypeArray(3), fishingFishArray(4), fishingJunkArray(11), fishingTreasuresArray(5)
 {
 	// Source: https://github.com/WangTingZheng/mcp940/tree/master/src/minecraft/assets/minecraft/loot_tables/gameplay
-	catchTypeArray[0] = new CatchTypeWeighedItem(CatchType::FISH, 8); // 850
+	catchTypeArray[0] = new CatchTypeWeighedItem(CatchType::FISH, 850);
 	catchTypeArray[1] = new CatchTypeWeighedItem(CatchType::JUNK, 100 );
-	catchTypeArray[2] = new CatchTypeWeighedItem(CatchType::TREASURE, 5 ); // 50
+	catchTypeArray[2] = new CatchTypeWeighedItem(CatchType::TREASURE, 50 );
 
 	fishingTreasuresArray[0] = new CatchWeighedItem(Item::bow_Id, 1, 0, 1);
 	fishingTreasuresArray[1] = new CatchWeighedItem(Item::book_Id, 1, 0, 1);
 	fishingTreasuresArray[2] = new CatchWeighedItem(Item::fishingRod_Id, 1, 0, 1);
 	fishingTreasuresArray[3] = new CatchWeighedItem(Item::nameTag_Id, 1, 0, 1);
 	fishingTreasuresArray[4] = new CatchWeighedItem(Item::saddle_Id, 1, 0, 1);
-	fishingTreasuresArray[4] = new CatchWeighedItem(Tile::waterLily_Id, 1, 0, 1);
+	fishingTreasuresArray[5] = new CatchWeighedItem(Tile::waterLily_Id, 1, 0, 1);
 
 	fishingFishArray[0] = new CatchWeighedItem(Item::fish_raw_Id, 1, 0, 60); // Fish
 	fishingFishArray[1] = new CatchWeighedItem(Item::fish_raw_Id, 1, 1, 25); // Salmon
