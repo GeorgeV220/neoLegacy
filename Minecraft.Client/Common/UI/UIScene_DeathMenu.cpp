@@ -4,7 +4,7 @@
 #include "IUIScene_PauseMenu.h"
 #include "../../Minecraft.h"
 #include "../../MultiPlayerLevel.h"
-#include "../../MultiplayerLocalPlayer.h"
+#include "../../MultiPlayerLocalPlayer.h"
 #include "../../MinecraftServer.h"
 #include "../../../Minecraft.World/net.minecraft.world.level.storage.h"
 

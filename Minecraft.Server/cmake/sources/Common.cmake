@@ -508,7 +508,7 @@ set(_MINECRAFT_SERVER_COMMON_ROOT
   "${_MS_SRC}/../Minecraft.World/LivingEntity.h"
   "${_MS_SRC}/../Minecraft.World/Player.cpp"
   "${_MS_SRC}/../Minecraft.World/Player.h"
-  "${_MS_SRC}/../Minecraft.World/ThrownEnderPearl.cpp"
+  "${_MS_SRC}/../Minecraft.World/ThrownEnderpearl.cpp"
   "${_MS_SRC}/../Minecraft.World/Tile.cpp"
   "${_MS_SRC}/../Minecraft.World/DyePowderItem.cpp"
   "${_MS_SRC}/../Minecraft.World/DyePowderItem.h"
