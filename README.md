@@ -1,6 +1,8 @@
 ![Legacy Edition Banner](.github/LCRE-banner.png)
 # MinecraftConsoles (Legacy Console Revelations Edition)
 
+# This project has moved to https://github.com/LCE-Hub/LCE-Revelations and is now being developed alongside the LCE-Hub team!
+
 If you have any questions regarding this fork, this is my Fluxer server (similar to a Discord server):
 <p align="center">
   <a href="https://fluxer.gg/CgS3uFT7">
