@@ -669,7 +669,7 @@ void UIScene_CreateWorldMenu::handleSliderMove(F64 sliderId, F64 currentValue)
 		s_bHardcore = (value >= 4);
 		app.SetGameSettings(m_iPad, eGameSetting_Difficulty, s_bHardcore ? 3 : value);
 		if (value >= 4)
-			swprintf( (WCHAR *)TempString, 256, L"%ls: %ls", app.GetString( IDS_SLIDER_DIFFICULTY ), L"Hardcore");
+			swprintf( (WCHAR *)TempString, 256, L"%ls: %ls", app.GetString( IDS_SLIDER_DIFFICULTY ), IDS_HARDCORE);
 		else
 			swprintf( (WCHAR *)TempString, 256, L"%ls: %ls", app.GetString( IDS_SLIDER_DIFFICULTY ),app.GetString(m_iDifficultyTitleSettingA[value]));
 		m_sliderDifficulty.setLabel(TempString);
