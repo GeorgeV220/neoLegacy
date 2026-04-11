@@ -15,12 +15,13 @@ private:
 		eControl_OnlineGame,
 	};
 
-	static int m_iDifficultyTitleSettingA[5];
+    static int m_iDifficultyTitleSettingA[5];
+	static int m_iGamemodes[3];
 
 	UIControl m_controlMainPanel;
 	UIControl_Label m_labelGameName, m_labelSeed, m_labelCreatedMode;
-	UIControl_Button m_buttonGamemode, m_buttonMoreOptions, m_buttonLoadWorld;
-	UIControl_Slider m_sliderDifficulty;
+	UIControl_Button m_buttonMoreOptions, m_buttonLoadWorld;
+	UIControl_Slider m_sliderDifficulty, m_sliderGamemode;
 	UIControl_BitmapIcon m_bitmapIcon;
 
 	UIControl_CheckBox m_checkboxOnline;
@@ -32,7 +33,7 @@ private:
 			UI_MAP_ELEMENT( m_labelCreatedMode, "CreatedMode")
 			UI_MAP_ELEMENT( m_labelSeed, "Seed")
 			UI_MAP_ELEMENT( m_texturePackList, "TexturePackSelector")
-			UI_MAP_ELEMENT( m_buttonGamemode, "GameModeToggle")
+			UI_MAP_ELEMENT( m_sliderGamemode, "GameModeToggle")
 			UI_MAP_ELEMENT( m_checkboxOnline, "CheckboxOnline")
 			UI_MAP_ELEMENT( m_buttonMoreOptions, "MoreOptions")
 			UI_MAP_ELEMENT( m_buttonLoadWorld, "LoadSettings")
