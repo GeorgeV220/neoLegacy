@@ -680,10 +680,24 @@ void UIScene_CreateWorldMenu::handleSliderMove(F64 sliderId, F64 currentValue)
 			m_iGameModeId = GameType::SURVIVAL->getId();
 			m_bGameModeCreative = false;
 		    m_sliderGamemode.handleSliderMove(GameType::SURVIVAL->getId());
+		    m_sliderGamemode.setLabel(app.GetString(IDS_GAMEMODE_SURVIVAL));
 		}
 		break;
 	case eControl_GameModeToggle:
-		m_sliderGamemode.handleSliderMove(value);
+	    // Hardcore locks game mode to Survival
+	    if (s_bHardcore)
+	    {
+	        if (value != GameType::SURVIVAL->getId())
+	        {
+	            m_sliderGamemode.handleSliderMove(GameType::SURVIVAL->getId());
+	            m_sliderGamemode.setLabel(app.GetString(IDS_GAMEMODE_SURVIVAL));
+	            return;
+	        }
+	    }
+	    else
+	    {
+	        m_sliderGamemode.handleSliderMove(value);
+	    }
 		switch (value)
 		{
 		case 0: // Survival
