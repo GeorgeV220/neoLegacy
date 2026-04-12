@@ -197,6 +197,8 @@ jobs:
 
       - name: Create tag
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f Nightly-Dedicated-Server -m "Nightly server release ${{ steps.sha.outputs.short }}"
           git push origin Nightly-Dedicated-Server --force
 
@@ -249,6 +251,8 @@ jobs:
 
       - name: Create signed tag
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -f Nightly -m "Nightly release ${{ steps.sha.outputs.short }}"
           git push origin Nightly --force
 
