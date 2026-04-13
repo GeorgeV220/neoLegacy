@@ -1591,6 +1591,13 @@ float Gui::getOpacity(int iPad, DWORD index)
 	return opacityPercentage;
 }
 
+//just like java functionality it overwrites the jukebox label
+void Gui::setActionBarMessage(wstring message)
+{
+	overlayMessageString = message;
+	overlayMessageTime = 20 * 4; //idk how long it should last, need to check java usage
+}
+
 float Gui::getJukeboxOpacity(int iPad)
 {
 	float t = overlayMessageTime - lastTickA;
@@ -1606,7 +1613,7 @@ void Gui::setNowPlaying(const wstring& string)
 //	overlayMessageString = L"Now playing: " + string;
 	overlayMessageString = app.GetString(IDS_NOWPLAYING) + string;
     overlayMessageTime = 20 * 3;
-    animateOverlayMessageColor = true;
+    animateOverlayMessageColor = true; //appears to be unused, @DrPerkyLegit plans to add in later pr
 }
 
 void Gui::displayClientMessage(int messageId, int iPad)

@@ -64,6 +64,8 @@ public:
 	wstring getMessage(int iPad, DWORD index) { return guiMessages[iPad].at(index).string; }
 	float getOpacity(int iPad, DWORD index);
 
+	void setActionBarMessage(wstring message); //uses jukebox label
+
 	wstring getJukeboxMessage(int iPad) { return overlayMessageString; }
 	float getJukeboxOpacity(int iPad);
 

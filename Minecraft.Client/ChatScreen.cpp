@@ -148,8 +148,7 @@ void ChatScreen::keyPressed(wchar_t ch, int eventKey)
         cursorIndex--;
         return;
     }
-
-    if (isAllowedChatChar(ch) && static_cast<int>(message.length()) < SharedConstants::maxChatLength)
+    if (isAllowedChatChar(ch) && static_cast<int>(message.length()) < SharedConstants::maxVisibleLength)
 	{
         message.insert(cursorIndex, 1, ch);
         cursorIndex++;
