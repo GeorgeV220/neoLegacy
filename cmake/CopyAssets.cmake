@@ -7,7 +7,7 @@ function(setup_asset_folder_copy TARGET_NAME ASSET_FOLDER_PAIRS)
     "*.xml" "*.lang" 
     "*.bat" "*.cmd"
     "*.msscmp" "*.binka" # Old audio formats
-    "*.swf"
+    #"*.swf"
     "*.resx" #"*.loc"
     "*.wav" # Unsupported audio format
     "*.xui" "*.xgs"
