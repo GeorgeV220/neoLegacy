@@ -24,8 +24,10 @@ UIScene_HUD::UIScene_HUD(int iPad, void *initData, UILayer *parentLayer) : UISce
 	for(unsigned int i = 0; i < CHAT_LINES_COUNT; ++i)
 	{
 		m_labelChatText[i].init(L"");
+		IggyValueSetBooleanRS(m_labelChatText[i].getIggyValuePath(), 0, "m_bUseHtmlText", true);
 	}
 	m_labelJukebox.init(L"");
+	IggyValueSetBooleanRS(m_labelJukebox.getIggyValuePath(), 0, "m_bUseHtmlText", true);
 
 	addTimer(0, 100);
 }
