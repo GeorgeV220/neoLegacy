@@ -285,7 +285,7 @@ UIScene_LoadMenu::UIScene_LoadMenu(int iPad, void *initData, UILayer *parentLaye
 			if (m_bHardcore)
 			{
 				WCHAR TempString[256];
-				swprintf((WCHAR *)TempString, 256, L"%ls: %ls", app.GetString(IDS_SLIDER_DIFFICULTY), IDS_HARDCORE);
+				swprintf((WCHAR *)TempString, 256, L"%ls: %ls", app.GetString(IDS_SLIDER_DIFFICULTY), app.GetString(IDS_HARDCORE));
 				m_sliderDifficulty.init(TempString, eControl_Difficulty, 0, 4, 4);
 			}
 		}
@@ -586,7 +586,7 @@ void UIScene_LoadMenu::tick()
 			if (m_bHardcore)
 			{
 				WCHAR TempString[256];
-				swprintf( (WCHAR *)TempString, 256, L"%ls: %ls", app.GetString( IDS_SLIDER_DIFFICULTY ), IDS_HARDCORE);
+				swprintf( (WCHAR *)TempString, 256, L"%ls: %ls", app.GetString( IDS_SLIDER_DIFFICULTY ), app.GetString(IDS_HARDCORE));
 				m_sliderDifficulty.init(TempString, eControl_Difficulty, 0, 4, 4);
 
 				// Hardcore locks game mode to Survival
