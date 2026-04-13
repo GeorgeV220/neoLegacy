@@ -23,6 +23,7 @@ set(_MINECRAFT_SERVER_COMMON_ROOT
   "${_MS_SRC}/../Minecraft.Client/BossMobGuiInfo.cpp"
   "${_MS_SRC}/../Minecraft.Client/BreakingItemParticle.cpp"
   "${_MS_SRC}/../Minecraft.Client/BubbleParticle.cpp"
+  "${_MS_SRC}/../Minecraft.Client/WaterWakeParticle.cpp"
   "${_MS_SRC}/../Minecraft.Client/BufferedImage.cpp"
   "${_MS_SRC}/../Minecraft.Client/Button.cpp"
   "${_MS_SRC}/../Minecraft.Client/Camera.cpp"

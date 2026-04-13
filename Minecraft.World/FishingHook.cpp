@@ -15,9 +15,18 @@
 #include "../Minecraft.World/EnchantmentHelper.h"
 #include "../Minecraft.World/Enchantment.h"
 #include "../Minecraft.World/ItemInstance.h"
+#include "SynchedEntityData.h"
 #include <algorithm>
 
-// 4J - added common ctor code.
+
+const int FishingHook::DATA_FLAG_RENDER_CLIENT_FX = 20;
+const int FishingHook::DATA_FISH_APPROACH_ANGLE = 21;
+const int FishingHook::DATA_WAKE_TIMER = 22;
+const int FishingHook::DATA_NIBBLE_TIMER = 23;
+const int FishingHook::DATA_FLAG_NIBBLE = 24;
+
+
+// 4J - added common ctor code. 
 void FishingHook::_init()
 {
 	// 4J Stu - This function call had to be moved here from the Entity ctor to ensure that
@@ -31,13 +40,15 @@ void FishingHook::_init()
 	inGround = false;
 	shakeTime = 0;
 	flightTime = 0;
-	nibble = 0;
 
 	// TU 31: Fishing rod now has a random nibble timer between 5 and 30 seconds, instead of a 1/500 chance every tick (plus modifiers). Source: https://minecraft.wiki/w/Fishing
-	nibbleTimer = random->nextInt(801) + 100;
-	lureTime = 0;
 	hookedIn = nullptr;
 	previousItem = nullptr;
+
+	fishApproachAngle = 0.0f;
+	wakeTimer = 0;
+	nibble = 0;
+	nibbleTimer = 0;
 
 	lureLevel = 0;
 	luckLevel = 0;
@@ -113,6 +124,11 @@ void FishingHook::getEnchantLevels() {
 
 void FishingHook::defineSynchedData()
 {
+	entityData->define(FishingHook::DATA_FLAG_RENDER_CLIENT_FX, (short)0);
+	entityData->define(FishingHook::DATA_FISH_APPROACH_ANGLE, 0.0f);
+	entityData->define(FishingHook::DATA_WAKE_TIMER, (short)0);
+	entityData->define(FishingHook::DATA_NIBBLE_TIMER, (short)0);
+	entityData->define(FishingHook::DATA_FLAG_NIBBLE, (short)0);
 }
 
 bool FishingHook::shouldRenderAtSqrDistance(double distance)
@@ -336,7 +352,7 @@ void FishingHook::tick()
 		inertia = 0.5f;
 	}
 
-	int steps = 5;
+	int steps = 10;
 	double waterPercentage = 0;
 	for (int i = 0; i < steps; i++)
 	{
@@ -351,72 +367,19 @@ void FishingHook::tick()
 
 	if (waterPercentage > 0)
 	{
-		if (nibble > 0)
-		{
-
-			nibble--;
-		} 
-		else
-		{	
-
-			if (!(level->canSeeSky(Mth::floor(x), Mth::floor(y) + 1, Mth::floor(z)))) {
-				// Don't minus the nibbleTimer if the hook obstructed from the sky.
-			}
-			// TU 31: Raining affects the nibble timer by random chance rather than being a fixed rate. Source: https://minecraft.wiki/w/Fishing
-			else if (!(level->isRainingAt( Mth::floor(x), Mth::floor(y) + 1, Mth::floor(z)))) {
-				nibbleTimer--;
-			}
-
-			else {
-				if (random->nextInt(4) == 0) {
-					nibbleTimer -= 2;
-				}
-				else {
-					nibbleTimer--;
-				}
-			}
-
-			// Only calculate the effect of lure if it hasn't been calculated already.
-			if (lureTime == 0 && owner != nullptr)
-			{
-				lureTime = this->lureLevel * 100;
-				nibbleTimer -= lureTime;
-				// if the lure effect causes the nibble timer to go below 0, reset the timer and lure time to recalculate next tick. Source: https://minecraft.wiki/w/Fishing
-				if (nibbleTimer < 0)
-				{
-					nibbleTimer = random->nextInt(801) + 100;
-					lureTime = 0;
-				}
-			}
-
-			// Checks if the nibble timer has ran out. Edge case for if it's raining and the nibble timer goes 
-			// below 0 due to the random chance of the rain decreasing the timer by 2 instead of 1.
-			if (nibbleTimer == 0 || nibbleTimer == -1)
-			{
-				nibble = random->nextInt(11) + 30;
-				nibbleTimer = random->nextInt(801) + 100;
-				lureTime = 0;
-				yd -= 0.2f;
-				playSound(eSoundType_RANDOM_SPLASH, 0.25f, 1 + (random->nextFloat() - random->nextFloat()) * 0.4f);
-				float yt = static_cast<float>(Mth::floor(bb->y0));
-				for (int i = 0; i < 1 + bbWidth * 20; i++)
-				{
-					float xo = (random->nextFloat() * 2 - 1) * bbWidth;
-					float zo = (random->nextFloat() * 2 - 1) * bbWidth;
-					level->addParticle(eParticleType_bubble, x + xo, yt + 1, z + zo, xd, yd - random->nextFloat() * 0.2f, zd);
-				}
-				for (int i = 0; i < 1 + bbWidth * 20; i++)
-				{
-					float xo = (random->nextFloat() * 2 - 1) * bbWidth;
-					float zo = (random->nextFloat() * 2 - 1) * bbWidth;
-					level->addParticle(eParticleType_splash, x + xo, yt + 1, z + zo, xd, yd, zd);
-				}
-			}
+		if (!level->isClientSide) {
+			catchingFish();
+			
 		}
-
 	}
-
-	if (nibble > 0) 
+	if (level->isClientSide) {
+		applyClientFX();
+		if (entityData->getShort(FishingHook::DATA_FLAG_NIBBLE) != 0)
+		{
+			yd -= random->nextFloat() * random->nextFloat() * random->nextFloat() * 0.2;
+		}
+	}
+	else if (nibble > 0)
 	{
 		yd -= random->nextFloat() * random->nextFloat() * random->nextFloat() * 0.2;
 	}
@@ -444,6 +407,177 @@ void FishingHook::addAdditonalSaveData(CompoundTag *tag)
 	tag->putByte(L"inTile", static_cast<byte>(lastTile));
 	tag->putByte(L"shake", static_cast<byte>(shakeTime));
 	tag->putByte(L"inGround", static_cast<byte>(inGround ? 1 : 0));
+	tag->putFloat(L"fishApproachAngle", fishApproachAngle);
+	tag->putShort(L"wakeTimer",  static_cast<short>(wakeTimer));
+	tag->putShort(L"nibbleTimer", static_cast<short>(nibbleTimer));
+	tag->putShort(L"nibble", static_cast<short>(nibble));
+}
+
+void FishingHook::catchingFish() {
+	int timerSubtractor = 1;
+	// Being under roof increases fishing time
+	if (!(level->canSeeSky(Mth::floor(x), Mth::floor(y) + 1, Mth::floor(z)) && random->nextInt(2) == 0)) {
+		timerSubtractor--;
+	}
+	// TU 31: Raining affects the nibble timer by random chance rather than being a fixed rate. Source: https://minecraft.wiki/w/Fishing
+	if (level->isRainingAt( Mth::floor(x), Mth::floor(y) + 1, Mth::floor(z)) && random->nextInt(4) == 0) {
+		timerSubtractor++;
+	}
+
+	if (nibble > 0)
+	{
+		nibble -= 1;
+		if (nibble <= 0)
+		{
+			nibbleTimer = 0;
+			wakeTimer = 0;
+		}
+	}
+
+	else
+	{	
+		if (wakeTimer > 0)
+		{
+			wakeTimer -= timerSubtractor;
+
+			if (wakeTimer <= 0)
+			{
+				yd -= 0.2f;
+				playSound(eSoundType_RANDOM_SPLASH, 0.25f, 1.0f + (random->nextFloat() - random->nextFloat()) * 0.4f);
+				nibble = random->nextInt(11) + 30;
+			}
+			else
+			{
+				fishApproachAngle += (float)(random->nextGaussian() * 4.0);
+			}
+		}
+		else if ( nibbleTimer>0 ) {
+			nibbleTimer -= timerSubtractor;
+			if (nibbleTimer <= 0)
+			{
+				fishApproachAngle = random->nextFloat() * 360.0f;
+				wakeTimer = random->nextInt(61) + 20;
+			}
+		}
+		else
+		{
+			nibbleTimer = random->nextInt(801) + 100 - lureLevel * 100;
+		}
+	}
+	updateSynchedData();
+}
+
+// I guess I have to use UK spelling :(
+void FishingHook::updateSynchedData() {
+	short nibbleFlag = (nibble > 0) ? 1 : 0;
+	if (nibble > 0 && entityData->getShort(FishingHook::DATA_FLAG_RENDER_CLIENT_FX) != 1) {
+		entityData->set(FishingHook::DATA_FLAG_RENDER_CLIENT_FX, 1); // Render Nibble FX
+	}
+	// Flags and synced data are only updated if they have changed.
+	else if (wakeTimer > 0 && entityData->getShort(FishingHook::DATA_FLAG_RENDER_CLIENT_FX) != 2) {
+		entityData->set(FishingHook::DATA_FLAG_RENDER_CLIENT_FX, 2); // Render Wake FX
+	}
+
+	else if (nibbleTimer > 0 && entityData->getShort(FishingHook::DATA_FLAG_RENDER_CLIENT_FX) != 3) {
+		entityData->set(FishingHook::DATA_FLAG_RENDER_CLIENT_FX, 3); // Render Fishing FX
+	}
+
+	else if (entityData->getShort(FishingHook::DATA_FLAG_RENDER_CLIENT_FX) != 0){
+		entityData->set(FishingHook::DATA_FLAG_RENDER_CLIENT_FX, 0); // Render Nothing
+	}
+
+	if (entityData->getFloat(FishingHook::DATA_FISH_APPROACH_ANGLE) != fishApproachAngle) {
+		entityData->set(FishingHook::DATA_FISH_APPROACH_ANGLE, fishApproachAngle);
+	}
+	if (entityData->getShort(FishingHook::DATA_NIBBLE_TIMER) != nibbleTimer) {
+		entityData->set(FishingHook::DATA_NIBBLE_TIMER, nibbleTimer);
+	}
+	if (entityData->getShort(FishingHook::DATA_WAKE_TIMER) != wakeTimer) {
+		entityData->set(FishingHook::DATA_WAKE_TIMER, wakeTimer);
+	}
+
+	// Nibble flag is only updated if it has changed.
+	if (entityData->getShort(FishingHook::DATA_FLAG_NIBBLE) != nibbleFlag) {
+		entityData->set(FishingHook::DATA_FLAG_NIBBLE, nibbleFlag);
+	}
+}
+
+void FishingHook::applyClientFX() {
+	float f;
+	float particleY;
+	float particleZ;
+	float particleX;
+	float xDir;
+	float zDir;
+	float xVel;
+	float zVel;
+	float yt = static_cast<float>(Mth::floor(bb->y0) + 1.0);
+	int clientWakeTimer;
+	int clientNibbleTimer;
+
+
+	switch (entityData->getShort(FishingHook::DATA_FLAG_RENDER_CLIENT_FX)) {
+		case 1:
+			yd -= 0.2f;
+			playSound(eSoundType_RANDOM_SPLASH, 0.25f, 1.0f + (random->nextFloat() - random->nextFloat()) * 0.4f);
+			for (int i = 0; i < 1 + bbWidth * 20; i++)
+			{
+				level->addParticle(eParticleType_bubble, x, yt, z, bbWidth, 0, bbWidth);
+			}
+			for (int i = 0; i < 1 + bbWidth * 20; i++)
+			{
+				level->addParticle(eParticleType_wake, x, yt, z, bbWidth, 0, bbWidth);
+			}
+			break;
+		case 2:
+			f = entityData->getFloat(FishingHook::DATA_FISH_APPROACH_ANGLE) * 0.017453292f;
+			xDir = Mth::sin(f);
+			zDir = Mth::cos(f);
+			clientWakeTimer = entityData->getShort(FishingHook::DATA_WAKE_TIMER);
+			particleX = x + (xDir * (float)clientWakeTimer * 0.1f);
+			particleZ = z+ (zDir * (float)clientWakeTimer * 0.1f);
+
+			if (random->nextFloat() < 0.15f)
+			{
+				level->addParticle(eParticleType_bubble, particleX, yt - 0.10000000149011612, particleZ, xDir, 0.1, zDir);
+			}
+
+			zVel = xDir * 0.04F;
+			xVel = zDir * 0.04F;
+
+			level->addParticle(eParticleType_wake, particleX, yt, particleZ, xVel, 0.01, (-zVel));
+			level->addParticle(eParticleType_wake, particleX, yt, particleZ, (-xVel), 0.01, zVel);
+			break;
+		case 3:
+			f = 0.15F;
+			clientNibbleTimer = entityData->getShort(FishingHook::DATA_NIBBLE_TIMER);
+			if (clientNibbleTimer < 20)
+			{
+				f = f + (float)(20 - clientNibbleTimer) * 0.05f;
+			}
+			else if (clientNibbleTimer < 40)
+			{
+				f = (float)(40 - clientNibbleTimer) * 0.02f;
+			}
+			else if (clientNibbleTimer < 60)
+			{
+				f = (float)(60 - clientNibbleTimer) * 0.01f;
+			}
+
+			if (random->nextFloat() < f)
+			{
+				xDir = random->nextFloat() * 360.0f * 0.017453292f;
+				zDir = (random->nextFloat() * 45.0f) + 25.0f;
+				particleX = x + (Mth::sin(xDir) * zDir * 0.1f);
+				particleY = Mth::floor(bb->y0) + 1.0;
+				particleZ = z + (Mth::cos(xDir) * zDir * 0.1f);
+				for (int i = 0; i < 2 + random->nextInt(2); i++)
+				{
+					level->addParticle(eParticleType_splash, particleX, particleY, particleZ, 0.10000000149011612, 0.0, 0.10000000149011612);
+				}
+			}
+			break;
+	}
 }
 
 void FishingHook::readAdditionalSaveData(CompoundTag *tag)
@@ -454,6 +588,11 @@ void FishingHook::readAdditionalSaveData(CompoundTag *tag)
 	lastTile = tag->getByte(L"inTile") & 0xff;
 	shakeTime = tag->getByte(L"shake") & 0xff;
 	inGround = tag->getByte(L"inGround") == 1;
+	fishApproachAngle = tag->getFloat(L"fishApproachAngle");
+	wakeTimer = tag->getShort(L"wakeTimer");
+	nibbleTimer = tag->getShort(L"nibbleTimer");
+	nibble = tag->getShort(L"nibble");
+	entityData->set(FishingHook::DATA_FLAG_NIBBLE, (nibble > 0) ? 1 : 0);
 }
 
 float FishingHook::getShadowHeightOffs()
@@ -500,7 +639,6 @@ int FishingHook::retrieve()
 	if (inGround) dmg = 2;
 
 	remove();
-	owner->fishing = nullptr;
 	return dmg;
 }
 
