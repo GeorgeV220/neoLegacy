@@ -199,3 +199,9 @@ void Layer::init(int64_t seed)
     this->seed *= this->seed * 6364136223846793005LL + 1442695040888963407LL;
     this->seed += seedMixup;
 }
+bool Layer::isOcean(int biomeId)
+{
+    return biomeId == Biome::ocean->id || 
+           biomeId == Biome::deepOcean->id || 
+           biomeId == Biome::frozenOcean->id;
+}

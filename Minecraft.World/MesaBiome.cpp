@@ -75,7 +75,7 @@ void MesaBiome::initBands(int64_t /*seed*/) {}
 int MesaBiome::getBandColor(int x, int y, int z)
 {
     if (!clayBandsOffsetNoise)
-        return BAND_ORANGE;
+        return BAND_HARDENED_CLAY;
 
     double noiseX = static_cast<double>(x) / 512.0;
     int offset    = static_cast<int>(std::round(
@@ -179,7 +179,7 @@ void MesaBiome::buildSurfaceAtDefault(Level* level, Random* random,
 
     for (int y = Level::genDepthMinusOne; y >= 0; --y)
     {
-        int index = (localX * 16 + localZ) * Level::genDepth + y;  
+        int index = (localZ * 16 + localX) * Level::genDepth + y;
 
         
         if (y <= 1 + random->nextInt(2))
