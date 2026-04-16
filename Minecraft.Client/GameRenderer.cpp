@@ -1569,6 +1569,7 @@ void GameRenderer::renderLevel(float a, int64_t until)
 			PIXBeginNamedEvent(0,"Second pass level render");
 			levelRenderer->render(cameraEntity, 1, a, updateChunks);
 			PIXEndNamedEvent();
+			PIXBeginNamedEvent(0,"Third pass level render");
 			levelRenderer->render(cameraEntity, 2, a, updateChunks);
 			PIXEndNamedEvent();
 		}
