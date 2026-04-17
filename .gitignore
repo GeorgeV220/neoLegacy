@@ -429,3 +429,6 @@ result-*
 .direnv/
 .xwin-cache/
 .xwin/
+
+# macOS
+.DS_Store
