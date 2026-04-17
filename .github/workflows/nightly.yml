@@ -45,7 +45,7 @@ jobs:
 
         # Collect files, excluding unwanted extensions
         $files = Get-ChildItem -Path $source -Recurse -File |
-          Where-Object { $_.Extension -notin '.pch', '.pdb', '.zip', '.ipdb', '.iobj' }
+          Where-Object { $_.Extension -notin '.pch', '.pdb', '.zip', '.ipdb', '.iobj', '.exp', '.lib' }
 
         Add-Type -AssemblyName System.IO.Compression
         Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -124,7 +124,7 @@ jobs:
         $topLevel = "LCE-Revelations-Server-Win64"
 
         $files = Get-ChildItem -Path $source -Recurse -File |
-          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj' }
+          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj', '.exp', '.lib' }
 
         Add-Type -AssemblyName System.IO.Compression
         Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -159,7 +159,7 @@ jobs:
         $topLevel = "LCE-Revelations-Server-Win64-FourKit"
 
         $files = Get-ChildItem -Path $source -Recurse -File |
-          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj' }
+          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj', '.exp', '.lib' }
 
         Add-Type -AssemblyName System.IO.Compression
         Add-Type -AssemblyName System.IO.Compression.FileSystem
