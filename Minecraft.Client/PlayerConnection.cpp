@@ -2059,6 +2059,40 @@ void PlayerConnection::handleCustomPayload(shared_ptr<CustomPayloadPacket> custo
 			player->inventory->setItem(player->inventory->selected, sentItem);
 		}
 	}
+	else if (CustomPayloadPacket::QUICK_EQUIP_PACKET.compare(customPayloadPacket->identifier) == 0) {
+		ByteArrayInputStream bais(customPayloadPacket->data);
+		DataInputStream input(&bais);
+		shared_ptr<ItemInstance> sentItem = Packet::readItem(&input);
+		//->connection->send(std::make_shared<SetEquippedItemPacket>(e->entityId, i, item));
+		int slot = Mob::getEquipmentSlotForItem(sentItem) - 1;
+
+		// If player is in survival mode (not creative)
+		if(!player->abilities.instabuild) { //
+			// Equip the armor to the appropriate slot
+			if (player->inventory->armor[slot] == nullptr) {
+				player->setEquippedSlot(slot, sentItem);
+				player->inventory->removeItemNoUpdate(player->inventory->selected);
+				// Remove the item from hand (set count to 0)
+				sentItem->count = 0;
+			}
+			else {
+				player->inventory->setItem(player->inventory->selected, player->inventory->armor[slot]);
+				player->setEquippedSlot(slot, sentItem);
+			}
+		}
+		else {
+			if (player->inventory->armor[slot] == nullptr) {
+				player->setEquippedSlot(slot, sentItem);
+			}
+			else {
+				player->inventory->setItem(player->inventory->selected, player->inventory->armor[slot]);
+				player->setEquippedSlot(slot, sentItem);
+			}
+		}
+		PlayerList* playerList = MinecraftServer::getInstance()->getPlayers();
+		playerList->broadcastAll(std::make_shared<SetEquippedItemPacket>(player->entityId, slot, sentItem));
+
+	}
 	else if (CustomPayloadPacket::TRADER_SELECTION_PACKET.compare(customPayloadPacket->identifier) == 0)
 	{
 		ByteArrayInputStream bais(customPayloadPacket->data);

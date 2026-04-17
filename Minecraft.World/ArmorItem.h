@@ -88,6 +88,7 @@ public:
 	virtual void registerIcons(IconRegister *iconRegister);
 
 	virtual shared_ptr<ItemInstance> use(shared_ptr<ItemInstance> instance, Level* level, shared_ptr<Player> player);
+	virtual int getUseDuration(shared_ptr<ItemInstance> itemInstance);
 
 	static Icon *getEmptyIcon(int slot);
 };

@@ -9,6 +9,8 @@
 #include "net.minecraft.world.level.h"
 #include "com.mojang.nbt.h"
 #include "ArmorItem.h"
+#include "../Minecraft.Client/MultiPlayerLocalPlayer.h"
+#include "../Minecraft.Client/ClientConnection.h"
 
 const int ArmorItem::healthPerSlot[] = {
 	11, 16, 15, 13
@@ -128,35 +130,45 @@ ArmorItem::ArmorItem(int id, const ArmorMaterial *armorType, int icon, int slot)
 	maxStackSize = 1;
 	DispenserTile::REGISTRY.add(this, new ArmorDispenseItemBehavior());
 }
+int ArmorItem::getUseDuration(shared_ptr<ItemInstance> itemInstance)
+{
+	return 1;
+}
 
 shared_ptr<ItemInstance> ArmorItem::use(shared_ptr<ItemInstance> instance, Level* level, shared_ptr<Player> player) {
-	//int slot = Mob::getEquipmentSlotForItem(instance) - 1;
+	int slot = Mob::getEquipmentSlotForItem(instance) - 1;
 
 	//// If player is in survival mode (not creative)
-	//if (!player->abilities.instabuild) { //
-	//	// Equip the armor to the appropriate slot
-	//	ItemInstance copy = *instance->copy_not_shared();
-	//	if (player->inventory->armor[slot] == nullptr) {
-	//		player->inventory->armor[slot] = make_shared<ItemInstance>(copy);
-	//		player->inventory->removeItemNoUpdate(player->inventory->selected);
-	//		// Remove the item from hand (set count to 0)
-	//		instance->count = 0;
-	//	}
-	//	else {
-	//		player->inventory->setItem(player->inventory->selected, player->inventory->armor[slot]);
-	//		player->inventory->armor[slot] = make_shared<ItemInstance>(copy);
-	//	}
-	//}
-	//else {
-	//	ItemInstance copy = *instance->copy_not_shared();
-	//	if (player->inventory->armor[slot] == nullptr) {
-	//		player->inventory->armor[slot] = make_shared<ItemInstance>(copy);
-	//	}
-	//	else {
-	//		player->inventory->setItem(player->inventory->selected, player->inventory->armor[slot]);
-	//		player->inventory->armor[slot] = make_shared<ItemInstance>(copy);
-	//	}
-	//}
+	if (!player->abilities.instabuild) { //
+		// Equip the armor to the appropriate slot
+		if (player->inventory->armor[slot] == nullptr) {
+			//player->setEquippedSlot(slot, instance);
+			//player->inventory->removeItemNoUpdate(player->inventory->selected);
+			// Remove the item from hand (set count to 0)
+			//instance->count = 0;
+		}
+		else {
+			//player->inventory->setItem(player->inventory->selected, player->inventory->armor[slot]);
+			//player->setEquippedSlot(slot, instance);
+		}
+	}
+	else {
+		if (player->inventory->armor[slot] == nullptr) {
+			//player->setEquippedSlot(slot, instance);
+		}
+		else {
+			//player->inventory->setItem(player->inventory->selected, player->inventory->armor[slot]);
+			//player->setEquippedSlot(slot, instance);
+		}
+	}
+	ByteArrayOutputStream baos;
+	DataOutputStream dos(&baos);
+	Packet::writeItem(instance, &dos);
+	for (int i = 0; i < XUSER_MAX_COUNT; i++) {
+		if (Minecraft::GetInstance()->localplayers[i] == player) {
+			Minecraft::GetInstance()->localplayers[i]->connection->send(std::make_shared<CustomPayloadPacket>(CustomPayloadPacket::QUICK_EQUIP_PACKET, baos.toByteArray()));
+		}
+	}
 
 	int material = Item::items[instance->id]->getMaterial();
 	int lo, hi;
