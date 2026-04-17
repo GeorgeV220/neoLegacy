@@ -45,7 +45,7 @@ jobs:
 
         # Collect files, excluding unwanted extensions
         $files = Get-ChildItem -Path $source -Recurse -File |
-          Where-Object { $_.Extension -notin '.pch', '.zip', '.ipdb', '.iobj' }
+          Where-Object { $_.Extension -notin '.pch', '.pdb', '.zip', '.ipdb', '.iobj' }
 
         Add-Type -AssemblyName System.IO.Compression
         Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -80,6 +80,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path staging
         Copy-Item LCE-Revelations-Client-Win64.zip staging/
         Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.exe staging/
+        Copy-Item ./build/windows64/Minecraft.Client/Release/Minecraft.Client.pdb staging/
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v6
@@ -283,6 +284,7 @@ jobs:
         subject-path: |
           artifacts/LCE-Revelations-Client-Win64.zip
           artifacts/Minecraft.Client.exe
+          artifacts/Minecraft.Client.pdb
 
     - name: Get short SHA
       id: sha
@@ -321,7 +323,10 @@ jobs:
         - To play, simply run `Minecraft.Client.exe`.
 
         **For those that wish to update their existing installation with the latest build:**
-        - Download `Minecraft.Client.exe` and `Minecraft.Client.pdb` and copy them over to your existing LCE-Revelations-Client-Win64 build (overwrite your old version of Minecraft.Client.exe and Minecraft.Client.pdb).
+        - Download `Minecraft.Client.exe` and copy it over to your existing LCE-Revelations-Client-Win64 build (overwrite your old version of Minecraft.Client.exe).
+
+        **For developers:**
+        - `Minecraft.Client.pdb` contains debug symbols for crash analysis and development. Place it next to `Minecraft.Client.exe` for stack traces to show function names and line numbers.
 
         **Steam Deck & Linux:**
         - Y'all know the drill. Download the `LCE-Revelations-Client-Win64.zip`, extract it, add the `Minecraft.Client.exe` as a "Non-Steam Game" within the Steam library, turn on compatibility mode with Proton Experimental, and then run it!

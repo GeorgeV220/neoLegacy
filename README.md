@@ -28,8 +28,19 @@ This project is based on Legacy Console Edition v1.6.0560.0 (TU19) with fixes an
 
 ## Latest:
 
+### Bug Fixes
+
+- Fixed save thumbnails appearing as black icons in the load world menu
+- Fixed hardcore worlds not locking the difficulty slider and gamemode toggle on the load screen
+- Fixed chat color codes (e.g. `§aGreen §cRed`) not displaying colors in singleplayer
+- Fixed a crash when opening certain menus (e.g. Edit Server) after leaving exclusive fullscreen at a small window size
+
 ### Upstream Merges
 
+- Upgraded 4JLibs libraries with fixes and modernizations
+- Fixed skin pack names showing only the first letter after the 4JLibs update
+- Chat formatting no longer uses shadow colors that Iggy doesn't support
+- Added reset color code support
 - Better text scaling for F3 debug menu on high-DPI monitors (#1494)
 - Scrollable chat with mouse wheel, full message history visible when chat is open (#1493)
 - Entity network limit increased from 2k to 16k (#1492)
