@@ -6732,6 +6732,8 @@ wstring CMinecraftApp::FormatChatMessage(const wstring& desc, bool applyStyling)
 	results = replaceAll(results, L"§f", replacements);
 	results = replaceAll(results, L"§r", replacements); //we only support color so reset is the same as white color
 
+	results = replaceAll(results, L"'", L"\u2019");
+
 	if (applyStyling) {
 		std::wsmatch match;
 		while (std::regex_search(results, match, IDS_Pattern)) {
