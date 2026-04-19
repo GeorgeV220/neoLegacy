@@ -158,8 +158,6 @@ private:
 #endif
 	
 	int GetRandomishTrack(int iStart,int iEnd);
-	void updateMiniAudio();
-	inline void getGameModeMusicID(Minecraft* pMinecraft, unsigned int i);
 
 	ma_engine m_engine;
 	ma_engine_config m_engineConfig;
