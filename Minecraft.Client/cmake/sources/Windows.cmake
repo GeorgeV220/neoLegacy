@@ -355,7 +355,7 @@ set(_MINECRAFT_CLIENT_WINDOWS_PLATFORM_LIBS_DEV_STORAGE
   "${CMAKE_CURRENT_SOURCE_DIR}/Windows64/4JLibs/impls/Windows_Libs/Storage/src/STO_SaveGame.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/Windows64/4JLibs/impls/Windows_Libs/Storage/inc/STO_SaveGame.h"
 )
-source_group("Windows64/4JLibs/impls/Windows_Libs/Storage/src" FILES ${_MINECRAFT_CLIENT_WINDOWS_PLATFORM_LIBS_DEV_STORAGE})
+source_group("Windows64/4JLibs/impls/Windows_Libs/Storage/inc" FILES ${_MINECRAFT_CLIENT_WINDOWS_PLATFORM_LIBS_DEV_STORAGE})
 
 set(_MINECRAFT_CLIENT_WINDOWS_WINDOWS
   "${CMAKE_CURRENT_SOURCE_DIR}/Xbox/MinecraftWindows.rc"
