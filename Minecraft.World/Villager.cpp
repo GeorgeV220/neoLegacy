@@ -501,7 +501,7 @@ void Villager::addOffers(int addCount)
 				{
 					newOffers->push_back(new MerchantRecipe(std::make_shared<ItemInstance>(id, 1, 0),
                                                             std::make_shared<ItemInstance>(Item::emerald, 2 + random->nextInt(3), 0),
-                                                            EnchantmentHelper::enchantItem(random, std::make_shared<ItemInstance>(id, 1, 0), 5 + random->nextInt(15))));
+                                                            EnchantmentHelper::enchantItem(random, std::make_shared<ItemInstance>(id, 1, 0), 5 + random->nextInt(15), true)));
 				}
 			}
 		}

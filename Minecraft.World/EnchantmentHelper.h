@@ -96,7 +96,7 @@ public:
 	*/
 	static int getEnchantmentCost(Random *random, int slot, int bookcases, shared_ptr<ItemInstance> itemInstance);
 
-	static shared_ptr<ItemInstance> enchantItem(Random *random, shared_ptr<ItemInstance> itemInstance, int enchantmentCost);
+	static shared_ptr<ItemInstance> enchantItem(Random *random, shared_ptr<ItemInstance> itemInstance, int enchantmentCost, bool treasure = false);
 
 	/**
 	* 
@@ -105,6 +105,6 @@ public:
 	* @param enchantmentCost
 	* @return
 	*/
-	static vector<EnchantmentInstance *> *selectEnchantment(Random *random, shared_ptr<ItemInstance> itemInstance, int enchantmentCost);
-	static unordered_map<int, EnchantmentInstance *> *getAvailableEnchantmentResults(int value, shared_ptr<ItemInstance> itemInstance);
+	static vector<EnchantmentInstance *> *selectEnchantment(Random *random, shared_ptr<ItemInstance> itemInstance, int enchantmentCost, bool treasure = false);
+	static unordered_map<int, EnchantmentInstance *> *getAvailableEnchantmentResults(int value, shared_ptr<ItemInstance> itemInstance, bool treasure = false);
 };

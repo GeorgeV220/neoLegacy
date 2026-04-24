@@ -294,9 +294,9 @@ int EnchantmentHelper::getEnchantmentCost(Random *random, int slot, int bookcase
 	return selected;
 }
 
-shared_ptr<ItemInstance> EnchantmentHelper::enchantItem(Random *random, shared_ptr<ItemInstance> itemInstance, int enchantmentCost)
+shared_ptr<ItemInstance> EnchantmentHelper::enchantItem(Random *random, shared_ptr<ItemInstance> itemInstance, int enchantmentCost, bool treasure)
 {
-	vector<EnchantmentInstance *> *newEnchantment = EnchantmentHelper::selectEnchantment(random, itemInstance, enchantmentCost);
+	vector<EnchantmentInstance *> *newEnchantment = EnchantmentHelper::selectEnchantment(random, itemInstance, enchantmentCost, treasure);
 	bool isBook = itemInstance->id == Item::book_Id;
 
 	if (isBook) itemInstance->id = Item::enchantedBook_Id;
@@ -330,7 +330,7 @@ shared_ptr<ItemInstance> EnchantmentHelper::enchantItem(Random *random, shared_p
 * @param enchantmentCost
 * @return
 */
-vector<EnchantmentInstance *> *EnchantmentHelper::selectEnchantment(Random *random, shared_ptr<ItemInstance> itemInstance, int enchantmentCost)
+vector<EnchantmentInstance *> *EnchantmentHelper::selectEnchantment(Random *random, shared_ptr<ItemInstance> itemInstance, int enchantmentCost, bool treasure)
 {
 	// withdraw bonus from item
 	Item *item = itemInstance->getItem();
@@ -356,7 +356,7 @@ vector<EnchantmentInstance *> *EnchantmentHelper::selectEnchantment(Random *rand
 
 	vector<EnchantmentInstance *> *results = nullptr;
 
-	unordered_map<int, EnchantmentInstance *> *availableEnchantments = getAvailableEnchantmentResults(realValue, itemInstance);
+	unordered_map<int, EnchantmentInstance *> *availableEnchantments = getAvailableEnchantmentResults(realValue, itemInstance, treasure);
 	if (availableEnchantments && !availableEnchantments->empty())
 	{
 		vector<WeighedRandomItem *> values;
@@ -430,7 +430,7 @@ vector<EnchantmentInstance *> *EnchantmentHelper::selectEnchantment(Random *rand
 	return results;
 }
 
-unordered_map<int, EnchantmentInstance *> *EnchantmentHelper::getAvailableEnchantmentResults(int value, shared_ptr<ItemInstance> itemInstance)
+unordered_map<int, EnchantmentInstance *> *EnchantmentHelper::getAvailableEnchantmentResults(int value, shared_ptr<ItemInstance> itemInstance, bool treasure)
 {
 	Item *item = itemInstance->getItem();
 	unordered_map<int, EnchantmentInstance *> *results = nullptr;
@@ -451,6 +451,10 @@ unordered_map<int, EnchantmentInstance *> *EnchantmentHelper::getAvailableEnchan
 		{
 			continue;
 		}
+	    // Skip treasure enchantments
+	    if (e->isTreasureEnchantment() && !treasure) continue;
+	    // Skip unavailable in survival
+	    if (!e->availableInSurvival()) continue;
 
 		for (int level = e->getMinLevel(); level <= e->getMaxLevel(); level++)
 		{

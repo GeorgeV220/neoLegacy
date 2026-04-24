@@ -81,7 +81,7 @@ void Enchantment::staticCtor()
 	for(unsigned int i = 0; i < 256; ++i)
 	{
 		Enchantment *enchantment = enchantments[i];
-		if (enchantment != nullptr)
+		if (enchantment != nullptr && enchantment->availableInSurvival())
 		{
 			validEnchantments.push_back(enchantment);
 		}
@@ -173,6 +173,16 @@ HtmlString Enchantment::getFullname(int level)
 bool Enchantment::canEnchant(shared_ptr<ItemInstance> item)
 {
 	return category->canEnchant(item->getItem());
+}
+
+bool Enchantment::isTreasureEnchantment()
+{
+	return false;
+}
+
+bool Enchantment::availableInSurvival()
+{
+	return true;
 }
 
 // 4J Added
