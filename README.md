@@ -28,6 +28,11 @@ This project is based on Legacy Console Edition v1.6.0560.0 (TU19) with fixes an
 
 ## Latest:
 
+### TPS Recovery at Scale (Dedicated Server)
+
+- Dedicated servers now hold a steady 20 TPS at 50+ players, instead of capping at 14-16 even when the CPU had room to spare. The tick scheduler had a subtle bug that threw away the time each tick took to run, so ticks could only fire every (50ms + tick time) instead of every 50ms flat. A few subsystems also did unnecessary work at scale: chunk visibility packet floods when players teleported or joined, empty Nether/End still being ticked when nobody was in them, and late-joining players being starved of chunk data by the tick order.
+- Fixed the scheduler timing, throttled the chunk packet floods, skipped ticking empty dimensions, and made chunk delivery fair across all players. No config changes needed.
+
 ### FourKit Performance Fix (Dedicated Server)
 
 - Fixed memory bloat and lag on FourKit dedicated servers running more than a handful of players. Recent additions were doing extra work for every chunk loaded and unloaded around every player, even when no plugin needed it. With many players moving around, that overhead piled up fast and dragged the tick rate down.
