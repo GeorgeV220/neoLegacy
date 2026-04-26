@@ -23,7 +23,7 @@ set(MINECRAFT_CLIENT_SOURCES
   ${SOURCES_COMMON}
 )
 
-add_executable(Minecraft.Client ${MINECRAFT_CLIENT_SOURCES}  "Common/UI/UIScene_AchievementsMenu.cpp" "Common/UI/UIScene_AchievementsMenu.h" "Common/UI/UIControl_AchievementsList.cpp" "Common/UI/UIControl_AchievementsList.h")
+add_executable(Minecraft.Client ${MINECRAFT_CLIENT_SOURCES})
 set(MINECRAFT_CLIENT_COMPILETIME_STRINGS_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/${PLATFORM_NAME}Media/strings.h")
 if(PLATFORM_NAME STREQUAL "Windows64")
   set(MINECRAFT_CLIENT_COMPILETIME_STRINGS_HEADER "${CMAKE_BINARY_DIR}/generated/Windows64Media/strings.h")
