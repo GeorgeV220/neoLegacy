@@ -22,11 +22,11 @@ SavannaBiome::SavannaBiome(int id) : Biome(id)
 
 Feature* SavannaBiome::getTreeFeature(Random* random)
 {
-    if (random->nextInt(5) <= 0)
+    if (random->nextInt(5) > 0)
     {
-        return new TreeFeature(false);
+        return new SavannaTreeFeature(false);
     }
-    return new SavannaTreeFeature(false);
+    return new TreeFeature(false);
 }
 
 int SavannaBiome::getGrassColor() const
@@ -86,11 +86,11 @@ MutatedSavannaBiome::MutatedSavannaBiome(int id, Biome* baseBiome)
     decorator->grassCount  = 5;
 }
 
-void MutatedSavannaBiome::buildSurfaceAtDefault(Level* level, Random* random,
-                                                 byte* chunkBlocks,
-                                                 int x, int z, double noiseVal)
+void MutatedSavannaBiome::buildSurfaceAt(Level* level, Random* random,
+                                          ChunkPrimer* primer,
+                                          int x, int z, double noiseVal)
 {
-
+    
     topMaterial     = static_cast<byte>(Tile::grass_Id);
     topMaterialData = 0;
     material        = static_cast<byte>(Tile::dirt_Id);
@@ -98,7 +98,7 @@ void MutatedSavannaBiome::buildSurfaceAtDefault(Level* level, Random* random,
 
     if (noiseVal > 1.75)
     {
-       
+        
         topMaterial     = static_cast<byte>(Tile::stone_Id);
         topMaterialData = 0;
         material        = static_cast<byte>(Tile::stone_Id);
@@ -108,13 +108,13 @@ void MutatedSavannaBiome::buildSurfaceAtDefault(Level* level, Random* random,
     {
         
         topMaterial     = static_cast<byte>(Tile::dirt_Id);
-        topMaterialData = 1;   
+        topMaterialData = 1;
         material        = static_cast<byte>(Tile::dirt_Id);
         materialData    = 0;
     }
- 
 
-    Biome::buildSurfaceAtDefault(level, random, chunkBlocks, x, z, noiseVal);
+    
+    Biome::buildSurfaceAt(level, random, primer, x, z, noiseVal);
 }
 
 void MutatedSavannaBiome::decorate(Level* level, Random* random, int xo, int zo)

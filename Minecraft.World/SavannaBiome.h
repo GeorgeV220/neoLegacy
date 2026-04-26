@@ -16,12 +16,13 @@ public:
     virtual Biome*      createMutatedCopy(int newId);
 };
 
+
 class MutatedSavannaBiome : public MutatedBiome
 {
 public:
     MutatedSavannaBiome(int id, Biome* baseBiome);
-    virtual void buildSurfaceAtDefault(Level* level, Random* random,
-                                       byte* chunkBlocks, int x, int z,
-                                       double noiseVal) override;
+    virtual void buildSurfaceAt(Level* level, Random* random,
+                                ChunkPrimer* primer, int x, int z,
+                                double noiseVal) override;
     virtual void decorate(Level* level, Random* random, int xo, int zo) override;
 };
