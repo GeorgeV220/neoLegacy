@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "System.h"
 #include "BasicTypeContainers.h"
 #include "File.h"
@@ -4790,4 +4790,24 @@ bool Level::canCreateMore(eINSTANCEOF type, ESPAWN_TYPE spawnType)
 	}
 	// 4J: Interpret 0 as no limit
 	return max == 0 || count < max;
+}
+
+
+BlockPos Level::getHeightmapPos(int x, int z)
+{
+    
+    if (x < -MAX_LEVEL_SIZE || z < -MAX_LEVEL_SIZE ||
+        x >= MAX_LEVEL_SIZE  || z >= MAX_LEVEL_SIZE)
+    {
+        return BlockPos(x, 64, z);
+    }
+
+    if (hasChunk(x >> 4, z >> 4))
+    {
+        LevelChunk* lc = getChunk(x >> 4, z >> 4);
+        int y = lc->getHeightmap(x & 0xF, z & 0xF);
+        return BlockPos(x, y, z);
+    }
+
+    return BlockPos(x, 0, z);
 }

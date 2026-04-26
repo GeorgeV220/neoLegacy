@@ -23,18 +23,20 @@ intArray RiverMixerLayer::getArea(int xo, int yo, int w, int h)
 	intArray result = IntCache::allocate(w * h);
 	for (int i = 0; i < w * h; i++)
 	{
-		if (b[i] == Biome::ocean->id || b[i] == Biome::deepOcean->id)
+		if (b[i] == Biome::ocean->id || b[i] == Biome::deepOcean->id || b[i] == Biome::frozenOcean->id)
 		{
 			result[i] = b[i];
-
 		}
 		else
 		{
 			if (r[i] >= 0)
 			{
-				if (b[i] == Biome::iceFlats->id) result[i] = Biome::frozenRiver->id;
-				else if (b[i] == Biome::mushroomIsland->id || b[i] == Biome::mushroomIslandShore->id) result[i] = Biome::mushroomIsland->id;		// 4J - don't make mushroom island shores as we don't have any island left once we do this as our islands are small (this used to change to mushroomIslandShore)
-				else result[i] = r[i];
+				if (b[i] == Biome::iceFlats->id || b[i] == Biome::iceSpikes->id || b[i] == Biome::coldTaiga->id || b[i] == Biome::coldTaigaHills->id) 
+					result[i] = Biome::frozenRiver->id;
+				else if (b[i] == Biome::mushroomIsland->id || b[i] == Biome::mushroomIslandShore->id) 
+					result[i] = Biome::mushroomIsland->id;		// 4J - don't make mushroom island shores as we don't have any island left once we do this as our islands are small (this used to change to mushroomIslandShore)
+				else 
+					result[i] = r[i];
 			}
 			else
 			{
