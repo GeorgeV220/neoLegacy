@@ -1,13 +1,12 @@
 using Minecraft.Server.FourKit;
 using Minecraft.Server.FourKit.Command;
-using Minecraft.Server.FourKit.Entity;
 using Minecraft.Server.FourKit.Plugin;
 
 namespace TpsPlugin;
 
 /// <summary>
-/// Minimal informational plugin. Exposes /tps (server tick rate) and /ping
-/// (caller's connection latency).
+/// Minimal plugin exposing /tps. Samples the server tick counter once per
+/// second and reports tick-rate averages over 1s/5s/30s/60s windows.
 /// </summary>
 public class TpsPlugin : ServerPlugin
 {
@@ -19,15 +18,10 @@ public class TpsPlugin : ServerPlugin
     {
         TpsProbe.Start();
 
-        var tps = FourKit.getCommand("tps");
-        tps.setDescription("Show server TPS over 1s/5s/30s/60s windows.");
-        tps.setUsage("/tps");
-        tps.setExecutor(new TpsExecutor());
-
-        var ping = FourKit.getCommand("ping");
-        ping.setDescription("Show your connection ping in milliseconds.");
-        ping.setUsage("/ping");
-        ping.setExecutor(new PingExecutor());
+        var cmd = FourKit.getCommand("tps");
+        cmd.setDescription("Show server TPS over 1s/5s/30s/60s windows.");
+        cmd.setUsage("/tps");
+        cmd.setExecutor(new TpsExecutor());
     }
 
     public override void onDisable()
@@ -124,26 +118,6 @@ internal sealed class TpsExecutor : CommandExecutor
         int tick = FourKit.getServerTick();
         sender.sendMessage($"TPS  1s={t1:F2}  5s={t5:F2}  30s={t30:F2}  60s={t60:F2}");
         sender.sendMessage($"server tick={tick}  samples={samples}");
-        return true;
-    }
-}
-
-internal sealed class PingExecutor : CommandExecutor
-{
-    public bool onCommand(CommandSender sender, Command command, string label, string[] args)
-    {
-        if (sender is not Player player)
-        {
-            sender.sendMessage("/ping must be run by a player.");
-            return true;
-        }
-        int ping = player.getPing();
-        if (ping < 0)
-        {
-            sender.sendMessage("Ping unavailable.");
-            return true;
-        }
-        sender.sendMessage($"Your ping: {ping}ms");
         return true;
     }
 }

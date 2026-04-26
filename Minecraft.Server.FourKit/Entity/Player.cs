@@ -109,12 +109,10 @@ public class Player : HumanEntity, OfflinePlayer, CommandSender
     public ulong getRawOfflineXUID() => _playerRawOfflineXUID;
 
     /// <summary>
-    /// Gets the player's network round trip time in milliseconds.
-    /// On the dedicated Windows server this reads the kernel TCP RTT directly
-    /// (microsecond precision, untouched by tick scheduler delay). If the OS
-    /// query fails it falls back to a smoothed application keepalive value.
+    /// Gets the player's estimated ping in milliseconds.
+    /// This value represents a weighted average of the response time to application layer ping packets sent. This value does not represent the network round trip time and as such may have less granularity and be impacted by other sources. For these reasons it should not be used for anti-cheat purposes. Its recommended use is only as a qualitative indicator of connection quality.
     /// </summary>
-    /// <returns>The player's RTT in milliseconds, or -1 if unavailable.</returns>
+    /// <returns>The player's estimated ping in milliseconds.</returns>
     public int getPing()
     {
         if (NativeBridge.GetPlayerLatency == null)
