@@ -15,11 +15,11 @@ void BiomeSource::_init()
     generatorOptions = L"";
     cache = new BiomeCache(this);
     
+    playerSpawnBiomes.push_back(Biome::plains);
     playerSpawnBiomes.push_back(Biome::forest);
     playerSpawnBiomes.push_back(Biome::taiga);
-    playerSpawnBiomes.push_back(Biome::plains);
-    playerSpawnBiomes.push_back(Biome::taigaHills);
     playerSpawnBiomes.push_back(Biome::forestHills);
+    playerSpawnBiomes.push_back(Biome::taigaHills);
     playerSpawnBiomes.push_back(Biome::jungle);
     playerSpawnBiomes.push_back(Biome::jungleHills);
 }
@@ -180,11 +180,11 @@ void BiomeSource::getRawBiomeBlock(BiomeArray &biomes, int x, int z, int w, int 
     {
         biomes[i] = Biome::biomes[result[i]];
 #ifndef _CONTENT_PACKAGE
-        if(biomes[i] == nullptr)
-        {
-            app.DebugPrintf("Tried to assign null biome %d\n", result[i]);
-            __debugbreak();
-        }
+		if(biomes[i] == nullptr)
+		{
+			app.DebugPrintf("Tried to assign null biome %d\n", result[i]);
+			DEBUG_BREAK();
+		}
 #endif
     }
 }

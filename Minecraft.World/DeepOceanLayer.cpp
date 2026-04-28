@@ -15,6 +15,7 @@ intArray DeepOceanLayer::getArea(int xo, int yo, int w, int h)
 	int k = w + 2;
 	int l = h + 2;
 	intArray aint = this->parent->getArea(i, j, k, l);
+	PIXBeginNamedEvent(0.0, "AddDeepOceanLayer::getArea");
 	intArray aint1 = IntCache::allocate(w * h);
 
 	for (int i1 = 0; i1 < h; ++i1)
@@ -58,6 +59,6 @@ intArray DeepOceanLayer::getArea(int xo, int yo, int w, int h)
 			}
 		}
 	}
-
+	PIXEndNamedEvent();
 	return aint1;
 }

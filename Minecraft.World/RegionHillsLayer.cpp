@@ -55,8 +55,14 @@ intArray RegionHillsLayer::getArea(int xo, int yo, int w, int h)
 
 			if (riverNoise != nullptr && k != 0 && l >= 2 && (l - 2) % 29 == 1 && k < 128)
 			{
-				
-				result[x + y * w] = k;
+				if (Biome::biomes[k + 128] != nullptr)
+				{
+					result[x + y * w] = k + 128;
+				}
+				else
+				{
+					result[x + y * w] = k;
+				}
 			}
 			else if (nextRandom(3) != 0 && !flag)
 			{
@@ -134,6 +140,18 @@ intArray RegionHillsLayer::getArea(int xo, int yo, int w, int h)
 				}
 
 				
+
+				if (flag && i1 != k)
+				{
+					if (Biome::biomes[i1 + 128] != nullptr)
+					{
+						i1 += 128;
+					}
+					else
+					{
+						i1 = k;
+					}
+				}
 
 				if (i1 == k)
 				{

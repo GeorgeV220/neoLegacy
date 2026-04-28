@@ -54,4 +54,22 @@ public:
         
         return 0;  
     }
+
+		class Plane
+        {
+        public:
+
+         static int getRandomFace(Random* random)
+            {
+       
+                static const int horizontal[4] = { 
+                 Direction::SOUTH, 
+                 Direction::WEST, 
+                 Direction::NORTH, 
+                 Direction::EAST 
+                };
+                return horizontal[random->nextInt(4)];
+            }
+        };
+
 };

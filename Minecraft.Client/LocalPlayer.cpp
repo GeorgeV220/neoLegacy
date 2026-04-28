@@ -11,7 +11,7 @@
 #include "CraftingScreen.h"
 #include "FurnaceScreen.h"
 #include "TrapScreen.h"
-
+#include "../Minecraft.Client/Common/UI/UIScene.h"
 #include "MultiPlayerLocalPlayer.h"
 #include "CreativeMode.h"
 #include "GameRenderer.h"
@@ -67,6 +67,9 @@ LocalPlayer::LocalPlayer(Minecraft *minecraft, Level *level, User *user, int dim
 	sprintTriggerTime = 0;
 	sprintTriggerRegisteredReturn = false;
 	twoJumpsRegistered = false;
+	m_elytraCancelPressCount = 0;
+	m_elytraCancelWindow = 0;
+	m_elytraSoundTicks = 0;
 	sprintTime = 0;
 	m_uiInactiveTicks=0;
 	portalTime = 0.0f;
@@ -331,6 +334,58 @@ void LocalPlayer::aiStep()
 	}
 	
 
+	if (isElytraFlying())
+	{
+		if (m_elytraCancelWindow > 0) m_elytraCancelWindow--;
+
+		if (!wasJumping && input->jumping) 
+		{
+			m_elytraCancelPressCount++;
+			if (m_elytraCancelPressCount == 1)
+			{
+				m_elytraCancelWindow = 15; 
+			}
+			else if (m_elytraCancelPressCount >= 2 && m_elytraCancelWindow > 0)
+			{
+				setElytraFlying(false);
+				jumpTriggerTime = 10; 
+				m_elytraCancelPressCount = 0;
+				m_elytraCancelWindow = 0;
+			}
+		}
+
+		if (m_elytraCancelWindow == 0 && m_elytraCancelPressCount > 0)
+			m_elytraCancelPressCount = 0;
+
+
+		m_elytraSoundTicks++;
+		float vol = 0.0f;
+		float pitch = 1.0f;
+		if (m_elytraSoundTicks >= 20)
+		{
+			float totalSpeed = (float)Mth::sqrt(xd * xd + yd * yd + zd * zd);
+			float f1 = totalSpeed / 2.0f;
+			float speedVol = f1 * f1;
+			if (speedVol > 1.0f) speedVol = 1.0f;
+			float fadeFactor = (m_elytraSoundTicks < 40)
+				? (float)(m_elytraSoundTicks - 20) / 20.0f
+				: 1.0f;
+			vol = speedVol * fadeFactor;
+			if (vol > 0.8f)
+				pitch = 1.0f + (vol - 0.8f);
+		}
+		if (vol > 0.01f)
+			minecraft->soundEngine->startElytraSound((float)x, (float)y, (float)z, vol, pitch);
+	}
+	else
+	{
+		m_elytraCancelPressCount = 0;
+		m_elytraCancelWindow = 0;
+		m_elytraSoundTicks = 0;
+		minecraft->soundEngine->stopElytraSound();
+	}
+
+
 	if (abilities.flying)
 	{
 		//            yd = 0;
@@ -518,7 +573,7 @@ void LocalPlayer::changeDimension(int i)
 			//minecraft.setScreen(new WinScreen());
 #ifndef _CONTENT_PACKAGE
 		app.DebugPrintf("LocalPlayer::changeDimension from 1 to 1 but WinScreen has not been implemented.\n");
-		__debugbreak();
+		DEBUG_BREAK();
 #endif
 		}
 		else
@@ -809,6 +864,16 @@ void LocalPlayer::displayClientMessage(int messageId)
 	minecraft->gui->displayClientMessage(messageId, GetXboxPad());
 }
 
+// Helper to convert LPCWSTR -> std::string (UTF-8)
+static std::string WideToUtf8(LPCWSTR wide)
+{
+	if (!wide) return {};
+	int size = WideCharToMultiByte(CP_UTF8, 0, wide, -1, nullptr, 0, nullptr, nullptr);
+	std::string result(size - 1, '\0');
+	WideCharToMultiByte(CP_UTF8, 0, wide, -1, result.data(), size, nullptr, nullptr);
+	return result;
+}
+
 void LocalPlayer::awardStat(Stat *stat, byteArray param)
 {
 #ifdef _DURANGO
@@ -831,6 +896,30 @@ void LocalPlayer::awardStat(Stat *stat, byteArray param)
 	if (stat->isAchievement())
 	{
 		Achievement *ach = static_cast<Achievement *>(stat);
+		/*ui.ShowAchievementToast(
+			WideToUtf8(app.GetString(ach->nameID)),
+			WideToUtf8(app.GetString(IDS_ACHIEVEMENT_VIEW))
+		);*/
+
+		std::wstring iconStr(ach->iconInt.begin(),
+			ach->iconInt.end());
+
+		wstring path = L"Graphics\\Achievements\\TROP" +
+			(iconStr.empty() ? L"000" : iconStr) +
+			L".png";
+		byteArray ba = app.getArchiveFile(path);
+		//auto t = ui.GetTopScene(0);
+		//t->registerSubstitutionTexture(path, ba.data, ba.length);
+		if (!minecraft->stats[m_iPad]->hasTaken(ach))
+		{
+			ui.ShowAchievementToast(
+				WideToUtf8(app.GetString(ach->nameID)),
+				WideToUtf8(app.FormatHTMLString(0, app.GetString(IDS_ACHIEVEMENT_VIEW), 0xFFFFFFFF, true).c_str()), ba,
+				WideToUtf8(path.c_str())
+			);
+			minecraft->achID = ach->getAchievementID();
+		}
+		//app.FormatHTMLString(0, app.GetString(IDS_ACHIEVEMENT_VIEW));
 		// 4J-PB - changed to attempt to award everytime - the award may need a storage device, so needs a primary player, and the player may not have been a primary player when they first 'got' the award
 		// so let the award manager figure it out
 		//if (!minecraft->stats[m_iPad]->hasTaken(ach))
@@ -843,6 +932,8 @@ void LocalPlayer::awardStat(Stat *stat, byteArray param)
 			// This causes some extreme flooding of some awards
 			if(ProfileManager.CanBeAwarded(m_iPad, ach->getAchievementID() ) )
 			{
+				
+
 				// 4J Stu - We don't (currently) care about the gamerscore, so setting to a default of 0 points
 				TelemetryManager->RecordAchievementUnlocked(m_iPad,ach->getAchievementID(),0);
 
@@ -967,12 +1058,12 @@ void LocalPlayer::awardStat(Stat *stat, byteArray param)
 		}
 #endif
 
-#ifdef _EXTENDED_ACHIEVEMENTS
+
 
 		// AWARD : Porkchop, cook and eat a porkchop.
 		{
 			Stat *cookPorkchop, *eatPorkchop;
-			cookPorkchop = GenericStats::itemsCrafted(Item::porkChop_cooked_Id);
+			cookPorkchop = GenericStats::itemsSmelted(Item::porkChop_cooked_Id);
 			eatPorkchop = GenericStats::itemsUsed(Item::porkChop_cooked_Id);
 
 			if ( stat == cookPorkchop || stat == eatPorkchop )
@@ -1127,7 +1218,7 @@ void LocalPlayer::awardStat(Stat *stat, byteArray param)
 		}
 #endif
 	}
-#endif
+
 }
 
 bool LocalPlayer::isSolidBlock(int x, int y, int z)

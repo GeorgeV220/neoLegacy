@@ -1,28 +1,18 @@
 #pragma once
-#include "net.minecraft.world.level.levelgen.feature.h"
-#include "Feature.h"
+#include "AbstractTreeFeature.h"
 
-class SavannaTreeFeature : public Feature
+class SavannaTreeFeature : public AbstractTreeFeature
 {
 public:
-    
     SavannaTreeFeature(bool doUpdate);
-
-    
     virtual bool place(Level* level, Random* random, int x, int y, int z) override;
 
 private:
-    int baseHeight;
+    static int s_logState;
+    static int s_leafState;
 
-    
-    void generateBendingTree(Level* level, Random* random, int x, int y, int z, int height);
-
-    
-    void generateForkingTree(Level* level, Random* random, int x, int y, int z, int height);
-
-    
-    void generateLeafCap(Level* level, int x, int y, int z);
-
-    
-    void placeLeaf(Level* level, int x, int y, int z);
+    void placeLog(Level* level, int x, int y, int z);
+    void placeLeafAt(Level* level, int x, int y, int z);
+    void placeLeavesLayer3(Level* level, int cx, int cy, int cz);
+    void placeLeavesLayer1(Level* level, int cx, int cy, int cz);
 };
