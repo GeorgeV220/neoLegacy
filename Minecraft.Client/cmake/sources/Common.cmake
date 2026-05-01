@@ -293,6 +293,8 @@ set(_MINECRAFT_CLIENT_COMMON_COMMON_UI_ALL_PLATFORMS
   "${BASE_DIR}/UI/IUIScene_ContainerMenu.h"
   "${BASE_DIR}/UI/IUIScene_CraftingMenu.cpp"
   "${BASE_DIR}/UI/IUIScene_CraftingMenu.h"
+  "${BASE_DIR}/UI/IUIScene_ClassicCraftingMenu.cpp"
+  "${BASE_DIR}/UI/IUIScene_ClassicCraftingMenu.h"
   "${BASE_DIR}/UI/IUIScene_CreativeMenu.cpp"
   "${BASE_DIR}/UI/IUIScene_CreativeMenu.h"
   "${BASE_DIR}/UI/IUIScene_DispenserMenu.cpp"
@@ -678,6 +680,8 @@ set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_MULTIPLAYER
 source_group("net/minecraft/client/multiplayer" FILES ${_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_MULTIPLAYER})
 
 set(_MINECRAFT_CLIENT_COMMON_NET_MINECRAFT_CLIENT_PARTICLE
+  "${CMAKE_CURRENT_SOURCE_DIR}/BarrierParticle.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BarrierParticle.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BreakingItemParticle.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/BreakingItemParticle.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BubbleParticle.cpp"

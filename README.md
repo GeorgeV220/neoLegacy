@@ -9,7 +9,7 @@ This project aims to backport the newer title updates back to Legacy Console Edi
 ![Roadmap](.github/roadmap.png)
 
 - Port Title Update 25 (100% complete) ( 🎉 )
-- Port Title Update 31 (94.03% complete)
+- Port Title Update 31 (97.01% complete)
 
 See our [Contributor's Guide](./CONTRIBUTING.md) for more information on the goals of this project.
 
@@ -22,6 +22,7 @@ Huge thanks to the following projects:
 
 - [Patoke/LCERenewed](https://github.com/Patoke/LCERenewed) - for some of the patches that required deep decompilation
 - [itsRevela/LCE-Revelations](https://github.com/itsRevela/LCE-Revelations) - for providing a stable project for neoLegacy to continue with
+- [GabsPuNs/MinecraftConsoles](https://github.com/GabsPuNs/MinecraftConsoles) - for providing us with their implemention of the Classic Crafting Feature.
 
 # Build & Run
 
@@ -35,5 +36,5 @@ Huge thanks to the following projects:
 
 We provide both a generic build script and a Nix flake.
 
-- Nix: `nix run .#client`
+- Nix: `nix run .#client` (not recommended)
 - Generic: `./build-linux.sh`
